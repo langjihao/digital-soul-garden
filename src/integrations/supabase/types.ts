@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      annotations: {
+        Row: {
+          author_email: string | null
+          author_name: string
+          body: string
+          clerk_user_id: string | null
+          created_at: string
+          document_id: string
+          id: string
+          paragraph_index: number
+          quote: string
+        }
+        Insert: {
+          author_email?: string | null
+          author_name: string
+          body: string
+          clerk_user_id?: string | null
+          created_at?: string
+          document_id: string
+          id?: string
+          paragraph_index: number
+          quote: string
+        }
+        Update: {
+          author_email?: string | null
+          author_name?: string
+          body?: string
+          clerk_user_id?: string | null
+          created_at?: string
+          document_id?: string
+          id?: string
+          paragraph_index?: number
+          quote?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           citations: Json | null
@@ -54,19 +90,19 @@ export type Database = {
           created_at: string
           id: string
           title: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           title?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           title?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -107,6 +143,47 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          author_email: string | null
+          author_name: string
+          body: string
+          clerk_user_id: string | null
+          created_at: string
+          document_id: string
+          id: string
+          parent_id: string | null
+        }
+        Insert: {
+          author_email?: string | null
+          author_name: string
+          body: string
+          clerk_user_id?: string | null
+          created_at?: string
+          document_id: string
+          id?: string
+          parent_id?: string | null
+        }
+        Update: {
+          author_email?: string | null
+          author_name?: string
+          body?: string
+          clerk_user_id?: string | null
+          created_at?: string
+          document_id?: string
+          id?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
             referencedColumns: ["id"]
           },
         ]
