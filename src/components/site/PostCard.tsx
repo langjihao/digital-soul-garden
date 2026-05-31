@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { MockPost } from "@/lib/mock-data";
-import { formatDate } from "@/lib/mock-data";
+import { formatDate, pick } from "@/lib/mock-data";
+import { useI18n } from "@/lib/i18n/provider";
 
 export function PostCard({ post, index = 0 }: { post: MockPost; index?: number }) {
+  const { locale, t } = useI18n();
   return (
     <motion.article
       initial={{ opacity: 0, y: 8 }}
@@ -12,13 +14,13 @@ export function PostCard({ post, index = 0 }: { post: MockPost; index?: number }
       className="group relative rounded-xl border border-border bg-card/60 p-5 transition-colors hover:border-primary/40"
     >
       <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-        <span>{formatDate(post.publishedAt)}</span>
-        <span>{post.readingTime}</span>
+        <span>{formatDate(post.publishedAt, locale)}</span>
+        <span>{post.readingMinutes} {t.units.readingTime}</span>
       </div>
       <h3 className="mt-2 text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
-        {post.title}
+        {pick(post.title, locale)}
       </h3>
-      <p className="mt-2 text-sm text-muted-foreground">{post.summary}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{pick(post.summary, locale)}</p>
       <div className="mt-4 flex items-center justify-between">
         <div className="flex flex-wrap gap-1.5">
           {post.tags.map((t) => (
