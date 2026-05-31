@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TweetsRouteImport } from './routes/tweets'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as PostsRouteImport } from './routes/posts'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as AboutRouteImport } from './routes/about'
@@ -17,10 +18,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
+import { Route as ApiPublicIngestRouteImport } from './routes/api/public/ingest'
 
 const TweetsRoute = TweetsRouteImport.update({
   id: '/tweets',
   path: '/tweets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PostsRoute = PostsRouteImport.update({
@@ -58,26 +65,35 @@ const PostsSlugRoute = PostsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => PostsRoute,
 } as any)
+const ApiPublicIngestRoute = ApiPublicIngestRouteImport.update({
+  id: '/api/public/ingest',
+  path: '/api/public/ingest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
   '/posts': typeof PostsRouteWithChildren
+  '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
+  '/api/public/ingest': typeof ApiPublicIngestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
   '/posts': typeof PostsRouteWithChildren
+  '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
+  '/api/public/ingest': typeof ApiPublicIngestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,10 +101,12 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
   '/posts': typeof PostsRouteWithChildren
+  '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
+  '/api/public/ingest': typeof ApiPublicIngestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,30 +115,36 @@ export interface FileRouteTypes {
     | '/about'
     | '/media'
     | '/posts'
+    | '/search'
     | '/tweets'
     | '/posts/$slug'
     | '/sign-in/$'
     | '/sign-up/$'
+    | '/api/public/ingest'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/media'
     | '/posts'
+    | '/search'
     | '/tweets'
     | '/posts/$slug'
     | '/sign-in/$'
     | '/sign-up/$'
+    | '/api/public/ingest'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/media'
     | '/posts'
+    | '/search'
     | '/tweets'
     | '/posts/$slug'
     | '/sign-in/$'
     | '/sign-up/$'
+    | '/api/public/ingest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -128,9 +152,11 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   MediaRoute: typeof MediaRoute
   PostsRoute: typeof PostsRouteWithChildren
+  SearchRoute: typeof SearchRoute
   TweetsRoute: typeof TweetsRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
+  ApiPublicIngestRoute: typeof ApiPublicIngestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -140,6 +166,13 @@ declare module '@tanstack/react-router' {
       path: '/tweets'
       fullPath: '/tweets'
       preLoaderRoute: typeof TweetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/posts': {
@@ -191,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof PostsRoute
     }
+    '/api/public/ingest': {
+      id: '/api/public/ingest'
+      path: '/api/public/ingest'
+      fullPath: '/api/public/ingest'
+      preLoaderRoute: typeof ApiPublicIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -209,20 +249,12 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   MediaRoute: MediaRoute,
   PostsRoute: PostsRouteWithChildren,
+  SearchRoute: SearchRoute,
   TweetsRoute: TweetsRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
+  ApiPublicIngestRoute: ApiPublicIngestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

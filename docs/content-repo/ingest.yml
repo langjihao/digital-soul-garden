@@ -1,0 +1,64 @@
+name: Ingest to Garden
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'posts/**'
+      - 'media/**'
+  issues:
+    types: [opened, edited, deleted, labeled, unlabeled, reopened, closed]
+  workflow_dispatch:
+    inputs:
+      full_resync:
+        description: 'Full resync (delete orphans, re-ingest all)'
+        required: false
+        default: 'true'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build payload
+        id: payload
+        run: |
+          PAYLOAD=$(jq -nc \
+            --arg event   "${{ github.event_name }}" \
+            --arg repo    "${{ github.repository }}" \
+            --arg ref     "${{ github.sha }}" \
+            --arg action  "${{ github.event.action }}" \
+            --arg issue   "${{ github.event.issue.number }}" \
+            --arg before  "${{ github.event.before }}" \
+            --arg after   "${{ github.event.after }}" \
+            --arg dispatch "${{ github.event.inputs.full_resync }}" \
+            '{
+              event:   $event,
+              repo:    $repo,
+              ref:     $ref,
+              action:  $action,
+              issue_number: ($issue|tonumber? // null),
+              before:  ($before  | select(.!="") // null),
+              after:   ($after   | select(.!="") // null),
+              full_resync: (($event=="workflow_dispatch") and ($dispatch!="false"))
+            }')
+          echo "PAYLOAD<<EOF" >> $GITHUB_OUTPUT
+          echo "$PAYLOAD"     >> $GITHUB_OUTPUT
+          echo "EOF"          >> $GITHUB_OUTPUT
+
+      - name: Sign and POST
+        env:
+          INGEST_URL: ${{ vars.INGEST_URL }}
+          INGEST_WEBHOOK_SECRET: ${{ secrets.INGEST_WEBHOOK_SECRET }}
+          PAYLOAD: ${{ steps.payload.outputs.PAYLOAD }}
+        run: |
+          if [ -z "$INGEST_URL" ]; then
+            echo "::error::Repo variable INGEST_URL is not set"; exit 1
+          fi
+          SIG=$(printf '%s' "$PAYLOAD" \
+            | openssl dgst -sha256 -hmac "$INGEST_WEBHOOK_SECRET" -hex \
+            | awk '{print $NF}')
+          echo "POST $INGEST_URL"
+          curl -fsS -X POST "$INGEST_URL" \
+            -H 'content-type: application/json' \
+            -H "x-ingest-signature: sha256=$SIG" \
+            --data "$PAYLOAD"
