@@ -1,21 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, X, Send, Sparkles } from "lucide-react";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * Floating "Ask the twin" chat — Phase 1 shell with canned reply.
  * Phase 4 wires this to /api/chat (RAG + streamText).
  */
 export function FloatingChat() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
-    {
-      role: "assistant",
-      content:
-        "Hi — I'm the digital twin. I read everything in this garden: posts, tweets, voice notes. Ask me anything, or pick a topic from `⌘K`.",
-    },
+    { role: "assistant", content: t.chat.greeting },
   ]);
+
+  // Refresh the greeting if locale switches while chat is empty.
+  useEffect(() => {
+    setMessages((m) =>
+      m.length === 1 && m[0].role === "assistant"
+        ? [{ role: "assistant", content: t.chat.greeting }]
+        : m
+    );
+  }, [t.chat.greeting]);
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +31,7 @@ export function FloatingChat() {
     setMessages((m) => [
       ...m,
       { role: "user", content: text },
-      {
-        role: "assistant",
-        content:
-          "I'd answer in my own voice here once the RAG pipeline is wired in Phase 4. For now this is a static shell.",
-      },
+      { role: "assistant", content: t.chat.stub },
     ]);
     setInput("");
   };
@@ -36,7 +39,7 @@ export function FloatingChat() {
   return (
     <>
       <motion.button
-        aria-label="Open chat with the digital twin"
+        aria-label={t.chat.open}
         onClick={() => setOpen((o) => !o)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -81,13 +84,13 @@ export function FloatingChat() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask the twin…"
+                placeholder={t.chat.placeholder}
                 className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               />
               <button
                 type="submit"
                 className="rounded-md bg-primary px-3 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
-                aria-label="Send"
+                aria-label={t.chat.send}
               >
                 <Send className="h-4 w-4" />
               </button>
