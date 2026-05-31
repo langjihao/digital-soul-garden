@@ -14,6 +14,7 @@ import { Route as PostsRouteImport } from './routes/posts'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 
 const TweetsRoute = TweetsRouteImport.update({
   id: '/tweets',
@@ -40,42 +41,57 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PostsSlugRoute = PostsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PostsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
-  '/posts': typeof PostsRoute
+  '/posts': typeof PostsRouteWithChildren
   '/tweets': typeof TweetsRoute
+  '/posts/$slug': typeof PostsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
-  '/posts': typeof PostsRoute
+  '/posts': typeof PostsRouteWithChildren
   '/tweets': typeof TweetsRoute
+  '/posts/$slug': typeof PostsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
-  '/posts': typeof PostsRoute
+  '/posts': typeof PostsRouteWithChildren
   '/tweets': typeof TweetsRoute
+  '/posts/$slug': typeof PostsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/media' | '/posts' | '/tweets'
+  fullPaths: '/' | '/about' | '/media' | '/posts' | '/tweets' | '/posts/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/media' | '/posts' | '/tweets'
-  id: '__root__' | '/' | '/about' | '/media' | '/posts' | '/tweets'
+  to: '/' | '/about' | '/media' | '/posts' | '/tweets' | '/posts/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/media'
+    | '/posts'
+    | '/tweets'
+    | '/posts/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   MediaRoute: typeof MediaRoute
-  PostsRoute: typeof PostsRoute
+  PostsRoute: typeof PostsRouteWithChildren
   TweetsRoute: typeof TweetsRoute
 }
 
@@ -116,16 +132,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/posts/$slug': {
+      id: '/posts/$slug'
+      path: '/$slug'
+      fullPath: '/posts/$slug'
+      preLoaderRoute: typeof PostsSlugRouteImport
+      parentRoute: typeof PostsRoute
+    }
   }
 }
+
+interface PostsRouteChildren {
+  PostsSlugRoute: typeof PostsSlugRoute
+}
+
+const PostsRouteChildren: PostsRouteChildren = {
+  PostsSlugRoute: PostsSlugRoute,
+}
+
+const PostsRouteWithChildren = PostsRoute._addFileChildren(PostsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   MediaRoute: MediaRoute,
-  PostsRoute: PostsRoute,
+  PostsRoute: PostsRouteWithChildren,
   TweetsRoute: TweetsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
