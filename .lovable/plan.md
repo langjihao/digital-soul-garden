@@ -1,70 +1,88 @@
 ## 目标
 
-为后期迁移到自建 Docker (Postgres + pgvector + MinIO) 做准备，在代码里加一层数据访问抽象层，让业务代码不依赖具体后端实现。当前继续使用 Lovable Cloud (Supabase) 跑通流程，迁移时只换 adapter，不改业务。
+用 Clerk 完全替换 Supabase Auth。前端用 `@clerk/tanstack-react-start` SDK，server functions 用 Clerk 的 JWT 校验身份。Supabase 仍作为数据库，但 `user_id` 字段从 `uuid` (引用 `auth.users`) 改为 `text` (存 Clerk userId)。评论区允许匿名提交。
 
-## 架构
+## 需要的密钥
 
-```text
-   Routes / Components / Server Functions
-                  │
-                  ▼
-        src/lib/storage/*.ts        ← 业务调用的接口 (DocumentRepo, VectorRepo, BlobStore, AuthProvider)
-                  │
-        ┌─────────┴─────────┐
-        ▼                   ▼
-  adapters/supabase    adapters/selfhost
-  (现在使用)          (Docker 部署后启用)
-                       - pg + pgvector (postgres.js / drizzle)
-                       - MinIO (S3 SDK)
-                       - 自写 JWT auth
-```
+需要你去 Clerk Dashboard 创建一个 application，然后提供:
+- `VITE_CLERK_PUBLISHABLE_KEY` (前端用，`pk_test_...`)
+- `CLERK_SECRET_KEY` (server function 校验 JWT 用，`sk_test_...`)
 
-通过环境变量 `STORAGE_DRIVER=supabase|selfhost` 在服务端切换，仅在 `createServerFn` 内读取，前端无感知。
+登录方式开启 **Email Code (OTP)** + **GitHub** + **Google**。GitHub / Google 现在可以先用 Clerk 提供的开发凭据 (Clerk 默认就行)，等上线再换自己的。
 
 ## 实施步骤
 
-### 1. 定义接口 (`src/lib/storage/types.ts`)
-- `DocumentRepo`: `list / get / upsert / delete` (posts, tweets, media 统一抽象成 document + kind)
-- `VectorRepo`: `upsertChunks / hybridSearch(query, k)` — 同时支持 BM25 + cosine
-- `BlobStore`: `getSignedUploadUrl / getPublicUrl / delete`
-- `CommentRepo` / `AnnotationRepo`: 文章评论与划线讨论
-- `AuthProvider`: `getCurrentUser / signIn / signOut`
+### 1. 依赖与环境
+- `bun add @clerk/tanstack-react-start`
+- 通过 `add_secret` 加入 `VITE_CLERK_PUBLISHABLE_KEY`、`CLERK_SECRET_KEY`
 
-### 2. Supabase Adapter (`src/lib/storage/adapters/supabase/`)
-- 实现以上接口，包装现有的 `supabase` / `supabaseAdmin` client
-- 混合搜索调用之前迁移里定义的 `hybrid_search` RPC
+### 2. 数据库迁移 (新建一个 migration)
+- 删除原表 RLS 中所有 `auth.uid()` 相关 policy
+- 把 `chat_sessions.user_id`、`chat_messages` 间接引用、`tweet_reactions.user_id` 从 `uuid` 改成 `text`
+- 新建 `comments` 表 (作者匿名兼容):
+  ```sql
+  create table public.comments (
+    id uuid primary key default gen_random_uuid(),
+    document_id uuid not null,
+    parent_id uuid references public.comments(id) on delete cascade,
+    clerk_user_id text,        -- 登录用户的 Clerk id, 匿名则 null
+    author_name text not null, -- 匿名提交时用户填写, 登录时取 Clerk 用户名
+    author_email text,         -- 匿名可选
+    body text not null,
+    created_at timestamptz not null default now()
+  );
+  ```
+- 新建 `annotations` 表 (划线讨论持久化, 同样允许匿名)
+- RLS: 公共表 (documents / chunks / tags / comments / annotations) 允许 anon SELECT；写操作走 server functions 用 service role，不再依赖 `auth.uid()`
+- 给所有新表加 `GRANT`，符合 public-schema-grants 规范
 
-### 3. Self-host Adapter 占位 (`src/lib/storage/adapters/selfhost/`)
-- 先放接口骨架 + TODO，依赖 `postgres` 和 `@aws-sdk/client-s3`(MinIO 兼容)，等真正部署再实现
-- 写一个 `docker-compose.yml` (Postgres+pgvector, MinIO, 应用) 放到 `docs/self-host/`
-- 写 schema 迁移文件 (从当前 Supabase migrations 提炼出纯 SQL 版本)
+### 3. Clerk 集成代码
+- 新建 `src/integrations/clerk/`:
+  - `client.ts`: 导出 `useUser`/`useAuth`/`SignIn`/`SignedIn`/`SignedOut` 等
+  - `server.ts`: 用 `@clerk/backend` 的 `verifyToken` 实现 `requireClerkAuth` server middleware (替代 `requireSupabaseAuth`)，从 `Authorization: Bearer` 头解 Clerk JWT，返回 `{ userId, claims }`
+  - `auth-attacher.ts`: server function middleware，自动从 `Clerk` 客户端拿 token 加到 `Authorization` 头
+- 更新 `src/start.ts`: 把 `attachSupabaseAuth` 换成 `attachClerkAuth`
+- 更新 `src/router.tsx` 和 `__root.tsx`: 包一层 `<ClerkProvider>`，`html lang="zh-CN"` 保留
 
-### 4. 工厂入口 (`src/lib/storage/index.ts`)
-```ts
-export const storage = createStorage(process.env.STORAGE_DRIVER ?? 'supabase')
-```
-仅在 server functions 内导入，避免泄漏到客户端。
+### 4. 路由/UI
+- 新建 `src/routes/sign-in.$.tsx` 和 `src/routes/sign-up.$.tsx`，挂载 Clerk 的 `<SignIn />` / `<SignUp />`（geek 黑主题 + JetBrains Mono 主题变量传给 Clerk appearance）
+- 新建 `src/routes/_authenticated.tsx` 作为受保护布局，`beforeLoad` 检测未登录跳 `/sign-in`
+- `SiteHeader` 加 `<SignedIn><UserButton/></SignedIn>` + `<SignedOut>` 登录链接
+- i18n: 中英文加 `signIn / signUp / signedInAs / signOut` 等条目
 
-### 5. 改造现有 server functions
-- 把已有/即将写的 server function (`postsList`, `chatRAG`, `commentsCreate` …) 全部改成调 `storage.*`，不直接 import `@/integrations/supabase/client`
-- Auth 与 realtime 这两个 Supabase 特有能力暂时仍直连，但封装在 `AuthProvider` / `RealtimeProvider` 接口后面，迁移时再换成 `socket.io` 或 polling
+### 5. 评论 / 划线 (允许匿名)
+- 在 `src/lib/api/comments.functions.ts` 创建 server fn:
+  - `listComments({ documentId })`: 公开
+  - `createComment({ documentId, parentId?, body, authorName, authorEmail? })`: 不走 auth middleware；如果请求有有效 Clerk token 就把 `clerk_user_id` + 用户名写入，否则当匿名
+  - 校验 `authorName` 必填、`body` 长度、简单 rate-limit (后续 phase)
+- 同样新增 `annotations.functions.ts`
+- 更新 `CommentSection.tsx` / `AnnotatedArticle.tsx`：
+  - 登录态自动填用户名，禁用名字输入框
+  - 未登录显示「昵称 + 可选邮箱 + 内容」表单
+  - 调用 server fn 持久化，替换原 mock state
 
-### 6. 文档 (`docs/self-host/README.md`)
-- docker-compose 启动步骤
-- 环境变量映射表 (Supabase ↔ Self-host)
-- 数据迁移脚本骨架: `pg_dump` 导出 + 用 `aws s3 sync` 把 Supabase Storage 拉到 MinIO
+### 6. 清理旧 Supabase Auth
+- 删除 `src/integrations/supabase/auth-middleware.ts` 和 `auth-attacher.ts` 的引用 (文件本身是自动生成的就留着，但不再 import)
+- `chat_sessions` / RAG 聊天的 server fn 改用 `requireClerkAuth`
+- 关闭 Supabase 项目里的 Email/Google provider (用 `configure_auth` 把 `disable_signup=true`)，避免双系统混淆
+
+### 7. 文档更新
+- `.lovable/plan.md` 增加 "Auth: Clerk" 一节，说明 storage 抽象层里 `AuthProvider` 占位将由 Clerk 实现 (即便目前直接调 SDK)
+- `docs/self-host/README.md` 加迁移注记：自建时 Clerk 仍可用 (它是托管服务)，或换 `auth.js` / `lucia`
 
 ## 不在本次范围
 
-- 真正部署 Docker (等你有服务器后再做)
-- GitHub Actions 摄取管道 (按原 roadmap Phase 2 继续)
-- 切换 auth provider (现阶段仍用 Supabase Auth)
+- GitHub Actions 摄取管道 (Phase 2)
+- 评论 rate-limit / 反垃圾 (后续)
+- Realtime 评论推送
+- 把 storage 抽象层里的 `AuthProvider` 接口真正接到 Clerk (现在直接用 SDK)
 
 ## 交付物
 
-- `src/lib/storage/` 完整接口 + Supabase adapter (可用)
-- self-host adapter 骨架 + docker-compose + 纯 SQL schema
-- 现有 `.lovable/plan.md` 更新 Phase 0/1 后接入 storage 层
-- 一份"如何迁移到自建"的步骤文档
+- DB migration: 改 user_id 类型 + 新 comments/annotations 表 + RLS/GRANT
+- Clerk 前后端集成 (Provider + middleware + attacher + sign-in/up 路由)
+- 受保护布局 `_authenticated.tsx`，Header 登录态切换
+- 评论 & 划线 server functions (匿名兼容)，组件接入真实持久化
+- 移除 Supabase Auth 调用
 
-确认后我就按这个开始动手。
+确认后我开始动手，第一步会先请你贴 Clerk 的两个 key。
