@@ -327,7 +327,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      hybrid_search: {
+        Args: {
+          full_text_weight?: number
+          match_count?: number
+          query_embedding: string
+          query_text: string
+          rrf_k?: number
+          semantic_weight?: number
+        }
+        Returns: {
+          chunk_id: string
+          content: string
+          document_id: string
+          score: number
+        }[]
+      }
     }
     Enums: {
       doc_kind: "post" | "tweet" | "media"
