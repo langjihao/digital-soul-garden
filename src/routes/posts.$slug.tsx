@@ -5,12 +5,15 @@ import { AnnotatedArticle } from "@/components/site/AnnotatedArticle";
 import { CommentSection } from "@/components/site/CommentSection";
 import { mockPosts, pick, formatDate, getPostBody } from "@/lib/mock-data";
 import { useI18n } from "@/lib/i18n/provider";
+import { getPostBySlugFn } from "@/lib/api/documents.functions";
 
 export const Route = createFileRoute("/posts/$slug")({
-  loader: ({ params }) => {
-    const post = mockPosts.find((p) => p.slug === params.slug);
-    if (!post) throw notFound();
-    return { post };
+  loader: async ({ params }) => {
+    const { post } = await getPostBySlugFn({ data: { slug: params.slug } });
+    const fallback = mockPosts.find((p) => p.slug === params.slug);
+    const resolved = post ?? fallback;
+    if (!resolved) throw notFound();
+    return { post: resolved };
   },
   head: ({ loaderData }) => {
     const title = loaderData?.post ? pick(loaderData.post.title, "zh") : "文章";

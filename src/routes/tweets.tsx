@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageTransition } from "@/components/site/PageTransition";
 import { TweetItem } from "@/components/site/TweetItem";
-import { mockTweets } from "@/lib/mock-data";
+import { mockTweets, type MockTweet } from "@/lib/mock-data";
 import { useT } from "@/lib/i18n/provider";
+import { listTweetsFn } from "@/lib/api/documents.functions";
 
 export const Route = createFileRoute("/tweets")({
+  loader: async () => {
+    const { items } = await listTweetsFn();
+    return { tweets: items.length ? items : mockTweets };
+  },
   head: () => ({
     meta: [
       { title: "碎念 · ~/garden" },
@@ -18,6 +23,7 @@ export const Route = createFileRoute("/tweets")({
 
 function TweetsPage() {
   const t = useT();
+  const { tweets } = Route.useLoaderData();
   return (
     <PageTransition>
       <section className="mx-auto max-w-3xl px-4 py-12">
@@ -29,7 +35,7 @@ function TweetsPage() {
           {t.tweets.desc2}
         </p>
         <ul className="mt-8 space-y-5">
-          {mockTweets.map((t, i) => (
+          {(tweets as MockTweet[]).map((t, i) => (
             <TweetItem key={t.id} tweet={t} index={i} />
           ))}
         </ul>
