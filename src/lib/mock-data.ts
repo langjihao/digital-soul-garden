@@ -13,6 +13,7 @@ export interface MockPost {
   publishedAt: string;
   readingMinutes: number;
   tags: string[];
+  body?: { zh: string[]; en: string[] };
 }
 
 export interface MockTweet {
