@@ -13,6 +13,7 @@ export interface MockPost {
   publishedAt: string;
   readingMinutes: number;
   tags: string[];
+  body?: { zh: string[]; en: string[] };
 }
 
 export interface MockTweet {
@@ -47,6 +48,20 @@ export const mockPosts: MockPost[] = [
     publishedAt: "2026-05-12",
     readingMinutes: 12,
     tags: ["rag", "pgvector", "tanstack", "ai"],
+    body: {
+      zh: [
+        "数字孪生不是把博客塞进一个聊天框就完事的把戏。真正的难点在于：让一个语言模型在不撒谎的前提下，用你自己的口吻、引用你写过的东西作答。",
+        "为此我把内容主权牢牢攥在 GitHub 私有仓库里，每次 push 触发 CI 把变更 diff 出来，调用嵌入模型写入 Supabase 的 pgvector。Postgres 同时存全文索引与向量，混合检索的 SQL 不到 80 行。",
+        "前端走 TanStack Start。⌘K 命令面板既是搜索入口也是对话入口——选中文章直接跳转,输入问题则走 RAG 流式管线。所有响应都带引用,点开就是源文段落。",
+        "下一步计划:给孪生加一段 200 token 的人设 prompt,把口吻锁死。等你读到这一段时,大概率已经上线了。",
+      ],
+      en: [
+        "A digital twin isn't just stuffing your blog into a chat box. The hard part is getting a language model to answer in your own voice, cite what you actually wrote, and never hallucinate.",
+        "To do that I keep content sovereignty in a private GitHub repo. Every push triggers CI that diffs the change, calls an embedding model, and writes into Supabase's pgvector. Postgres holds both full-text and vector indexes — the hybrid search SQL is under 80 lines.",
+        "The frontend is TanStack Start. The ⌘K palette doubles as search and chat entrypoint — pick a post to jump, type a question to stream a RAG answer. Every response carries inline citations back to the source paragraph.",
+        "Next step: lock the voice with a 200-token persona prompt. By the time you read this, it's probably already live.",
+      ],
+    },
   },
   {
     slug: "git-as-cms",
@@ -191,4 +206,11 @@ export function relativeTime(
   const d = Math.floor(h / 24);
   if (d < 7) return `${d} ${units.daysAgo}`;
   return new Date(iso).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric" });
+}
+
+export function getPostBody(post: MockPost, locale: Locale): string[] {
+  if (post.body) return post.body[locale];
+  // Fallback: synthesize a few paragraphs from the summary so every mock post is readable.
+  const s = pick(post.summary, locale);
+  return [s, s, s];
 }

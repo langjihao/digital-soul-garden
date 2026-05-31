@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { MockPost } from "@/lib/mock-data";
 import { formatDate, pick } from "@/lib/mock-data";
 import { useI18n } from "@/lib/i18n/provider";
@@ -13,6 +14,12 @@ export function PostCard({ post, index = 0 }: { post: MockPost; index?: number }
       transition={{ duration: 0.25, delay: index * 0.04, ease: "easeOut" }}
       className="group relative rounded-xl border border-border bg-card/60 p-5 transition-colors hover:border-primary/40"
     >
+      <Link
+        to="/posts/$slug"
+        params={{ slug: post.slug }}
+        className="absolute inset-0 z-10 rounded-xl"
+        aria-label={pick(post.title, locale)}
+      />
       <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
         <span>{formatDate(post.publishedAt, locale)}</span>
         <span>{post.readingMinutes} {t.units.readingTime}</span>
@@ -21,7 +28,7 @@ export function PostCard({ post, index = 0 }: { post: MockPost; index?: number }
         {pick(post.title, locale)}
       </h3>
       <p className="mt-2 text-sm text-muted-foreground">{pick(post.summary, locale)}</p>
-      <div className="mt-4 flex items-center justify-between">
+      <div className="relative z-20 mt-4 flex items-center justify-between pointer-events-none">
         <div className="flex flex-wrap gap-1.5">
           {post.tags.map((t) => (
             <span
