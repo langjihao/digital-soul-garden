@@ -1,51 +1,62 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Highlighter, MessageCircle, X, Send } from "lucide-react";
-import { useI18n } from "@/lib/i18n/provider";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@clerk/tanstack-react-start";
+import { useI18n, useT } from "@/lib/i18n/provider";
+import {
+  createAnnotation,
+  deleteAnnotation,
+  listAnnotations,
+  type AnnotationRow,
+} from "@/lib/api/annotations.functions";
 
-interface Reply {
-  author: string;
-  body: string;
-  createdAt: string;
-}
-
-interface Annotation {
-  id: string;
-  paragraphIndex: number;
-  quote: string;
-  replies: Reply[];
-}
-
-export function AnnotatedArticle({ paragraphs }: { paragraphs: string[] }) {
+export function AnnotatedArticle({
+  paragraphs,
+  documentId,
+}: {
+  paragraphs: string[];
+  documentId: string;
+}) {
   const { locale } = useI18n();
+  const t = useT();
+  const qc = useQueryClient();
+  const { user, isSignedIn } = useUser();
   const articleRef = useRef<HTMLDivElement>(null);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [popover, setPopover] = useState<
     { x: number; y: number; paragraphIndex: number; quote: string } | null
   >(null);
+  const [draftAnno, setDraftAnno] = useState<{
+    paragraphIndex: number;
+    quote: string;
+  } | null>(null);
+  const [draftBody, setDraftBody] = useState("");
+  const [draftName, setDraftName] = useState("");
 
-  const label = locale === "zh"
-    ? {
-        annotate: "划线讨论",
-        emptyTitle: "侧边讨论",
-        emptyDesc: "用鼠标选中正文任意片段，点弹出按钮即可在右侧开启讨论。",
-        you: "你",
-        reply: "回复",
-        replyPh: "对这段说点什么…",
-        close: "关闭",
-        threadsHeader: (n: number) => `${n} 段批注`,
-      }
-    : {
-        annotate: "Annotate",
-        emptyTitle: "Margin discussion",
-        emptyDesc: "Highlight any text in the article, then click the popup to start a side thread.",
-        you: "you",
-        reply: "Reply",
-        replyPh: "Say something about this passage…",
-        close: "Close",
-        threadsHeader: (n: number) => `${n} thread${n === 1 ? "" : "s"}`,
-      };
+  const queryKey = ["annotations", documentId];
+  const { data, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => listAnnotations({ data: { documentId } }),
+  });
+  const annotations: AnnotationRow[] = data?.annotations ?? [];
+
+  const createMut = useMutation({
+    mutationFn: (payload: Parameters<typeof createAnnotation>[0]["data"]) =>
+      createAnnotation({ data: payload }),
+    onSuccess: ({ annotation }) => {
+      setDraftAnno(null);
+      setDraftBody("");
+      setActiveId(annotation.id);
+      qc.invalidateQueries({ queryKey });
+    },
+    onError: (e) => console.error(e),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteAnnotation({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey }),
+  });
 
   // Capture selection inside article
   useEffect(() => {
@@ -98,34 +109,26 @@ export function AnnotatedArticle({ paragraphs }: { paragraphs: string[] }) {
     };
   }, []);
 
-  const addAnnotation = () => {
+  const openDraft = () => {
     if (!popover) return;
-    const a: Annotation = {
-      id: crypto.randomUUID(),
-      paragraphIndex: popover.paragraphIndex,
-      quote: popover.quote,
-      replies: [],
-    };
-    setAnnotations((arr) => [...arr, a]);
-    setActiveId(a.id);
+    setDraftAnno({ paragraphIndex: popover.paragraphIndex, quote: popover.quote });
     setPopover(null);
     window.getSelection()?.removeAllRanges();
   };
 
-  const addReply = (id: string, body: string) => {
-    setAnnotations((arr) =>
-      arr.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              replies: [
-                ...a.replies,
-                { author: label.you, body, createdAt: new Date().toISOString() },
-              ],
-            }
-          : a,
-      ),
-    );
+  const submitDraft = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!draftAnno) return;
+    const body = draftBody.trim();
+    if (!body) return;
+    if (!isSignedIn && !draftName.trim()) return;
+    createMut.mutate({
+      documentId,
+      paragraphIndex: draftAnno.paragraphIndex,
+      quote: draftAnno.quote,
+      body,
+      authorName: isSignedIn ? undefined : draftName.trim(),
+    });
   };
 
   // Render paragraph with <mark> around any annotation quotes
@@ -190,13 +193,13 @@ export function AnnotatedArticle({ paragraphs }: { paragraphs: string[] }) {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.12 }}
               onMouseDown={(e) => e.preventDefault()}
-              onClick={addAnnotation}
+              onClick={openDraft}
               style={{ left: popover.x, top: popover.y }}
               className="absolute z-30 -translate-x-1/2 -translate-y-full rounded-md border border-border bg-popover px-2.5 py-1.5 font-mono text-[11px] text-foreground shadow-lg shadow-primary/10 hover:border-primary/50"
             >
               <span className="inline-flex items-center gap-1.5">
                 <Highlighter className="h-3 w-3 text-primary" />
-                {label.annotate}
+                {t.annotations.annotate}
               </span>
             </motion.button>
           )}
@@ -209,13 +212,63 @@ export function AnnotatedArticle({ paragraphs }: { paragraphs: string[] }) {
           <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.25em] text-primary">
             <span className="inline-flex items-center gap-1.5">
               <MessageCircle className="h-3.5 w-3.5" />
-              {label.emptyTitle}
+              {t.annotations.title}
             </span>
-            <span className="text-muted-foreground">{label.threadsHeader(annotations.length)}</span>
+            <span className="text-muted-foreground">{t.annotations.threadsHeader(annotations.length)}</span>
           </div>
 
-          {annotations.length === 0 ? (
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{label.emptyDesc}</p>
+          {draftAnno && (
+            <form
+              onSubmit={submitDraft}
+              className="mt-3 rounded-lg border border-primary/40 bg-background/60 p-3"
+            >
+              <blockquote className="border-l-2 border-primary/50 pl-2 font-mono text-[11px] italic text-muted-foreground line-clamp-3">
+                "{draftAnno.quote}"
+              </blockquote>
+              {!isSignedIn && (
+                <input
+                  type="text"
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  maxLength={64}
+                  placeholder={t.auth.namePlaceholder}
+                  className="mt-2 w-full rounded-md border border-border bg-transparent px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                />
+              )}
+              <textarea
+                value={draftBody}
+                onChange={(e) => setDraftBody(e.target.value)}
+                rows={2}
+                maxLength={4000}
+                placeholder={t.annotations.bodyPh}
+                className="mt-2 w-full resize-none rounded-md border border-border bg-transparent px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              />
+              <div className="mt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftAnno(null);
+                    setDraftBody("");
+                  }}
+                  className="rounded-md border border-border px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  {t.annotations.close}
+                </button>
+                <button
+                  type="submit"
+                  disabled={!draftBody.trim() || createMut.isPending || (!isSignedIn && !draftName.trim())}
+                  className="rounded-md bg-primary px-2 py-1 font-mono text-[10px] text-primary-foreground transition hover:bg-primary/90 disabled:opacity-40"
+                >
+                  {t.annotations.submit}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {isLoading ? (
+            <p className="mt-3 text-xs text-muted-foreground">{t.annotations.loading}</p>
+          ) : annotations.length === 0 && !draftAnno ? (
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t.annotations.emptyDesc}</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {annotations.map((a) => (
@@ -224,13 +277,9 @@ export function AnnotatedArticle({ paragraphs }: { paragraphs: string[] }) {
                   annotation={a}
                   active={activeId === a.id}
                   onFocus={() => setActiveId(a.id)}
-                  onClose={() =>
-                    setAnnotations((arr) => arr.filter((x) => x.id !== a.id))
-                  }
-                  onReply={(body) => addReply(a.id, body)}
-                  replyPlaceholder={label.replyPh}
-                  replyLabel={label.reply}
-                  closeLabel={label.close}
+                  canDelete={isSignedIn && a.clerk_user_id === user?.id}
+                  onClose={() => deleteMut.mutate(a.id)}
+                  closeLabel={t.annotations.close}
                   locale={locale}
                 />
               ))}
@@ -247,23 +296,18 @@ function AnnotationCard({
   active,
   onFocus,
   onClose,
-  onReply,
-  replyPlaceholder,
-  replyLabel,
   closeLabel,
+  canDelete,
   locale,
 }: {
-  annotation: Annotation;
+  annotation: AnnotationRow;
   active: boolean;
   onFocus: () => void;
   onClose: () => void;
-  onReply: (body: string) => void;
-  replyPlaceholder: string;
-  replyLabel: string;
   closeLabel: string;
+  canDelete: boolean;
   locale: "zh" | "en";
 }) {
-  const [draft, setDraft] = useState("");
   return (
     <motion.li
       layout
@@ -278,58 +322,29 @@ function AnnotationCard({
         <blockquote className="border-l-2 border-primary/50 pl-2 font-mono text-[11px] italic text-muted-foreground line-clamp-3">
           "{annotation.quote}"
         </blockquote>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          aria-label={closeLabel}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        {canDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            aria-label={closeLabel}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
-      {annotation.replies.length > 0 && (
-        <ul className="mt-3 space-y-2">
-          {annotation.replies.map((r, i) => (
-            <li key={i} className="rounded-md bg-muted/30 px-2.5 py-2">
-              <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {r.author} · {new Date(r.createdAt).toLocaleTimeString(locale === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" })}
-              </div>
-              <p className="mt-1 text-xs text-foreground/90 whitespace-pre-wrap">{r.body}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const text = draft.trim();
-          if (!text) return;
-          onReply(text);
-          setDraft("");
-        }}
-        className="mt-3 flex items-end gap-1.5"
-      >
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          rows={1}
-          placeholder={replyPlaceholder}
-          onClick={(e) => e.stopPropagation()}
-          className="min-h-[32px] flex-1 resize-none rounded-md border border-border bg-transparent px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
-        />
-        <button
-          type="submit"
-          aria-label={replyLabel}
-          disabled={!draft.trim()}
-          className="rounded-md bg-primary p-1.5 text-primary-foreground transition hover:bg-primary/90 disabled:opacity-40"
-        >
-          <Send className="h-3.5 w-3.5" />
-        </button>
-      </form>
+      <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        {annotation.clerk_user_id ? "@" : ""}
+        {annotation.author_name} ·{" "}
+        {new Date(annotation.created_at).toLocaleTimeString(
+          locale === "zh" ? "zh-CN" : "en-US",
+          { hour: "2-digit", minute: "2-digit" },
+        )}
+      </div>
+      <p className="mt-1 whitespace-pre-wrap text-xs text-foreground/90">{annotation.body}</p>
     </motion.li>
   );
 }
