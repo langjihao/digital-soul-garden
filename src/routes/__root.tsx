@@ -11,6 +11,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SpotlightCursor } from "@/components/site/SpotlightCursor";
+import { CommandPalette } from "@/components/site/CommandPalette";
+import { FloatingChat } from "@/components/site/FloatingChat";
 
 function NotFoundComponent() {
   return (
@@ -77,11 +81,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "~/garden — a digital garden" },
+      {
+        name: "description",
+        content:
+          "A geek-minimal digital garden: posts, tweets, and media indexed for hybrid search and a RAG-powered digital twin.",
+      },
+      { name: "author", content: "garden" },
+      { property: "og:title", content: "~/garden — a digital garden" },
+      {
+        property: "og:description",
+        content:
+          "A geek-minimal digital garden: posts, tweets, and media indexed for hybrid search and a RAG-powered digital twin.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -101,11 +113,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="min-h-screen bg-background text-foreground antialiased">
         {children}
         <Scripts />
       </body>
@@ -118,8 +130,19 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <SpotlightCursor />
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex-1">
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </main>
+        <footer className="border-t border-border py-6 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          built in public · content lives in github · press ⌘K
+        </footer>
+      </div>
+      <CommandPalette />
+      <FloatingChat />
     </QueryClientProvider>
   );
 }
