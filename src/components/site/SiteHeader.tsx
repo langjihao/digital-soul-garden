@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { Terminal, Command as CmdIcon, LogIn } from "lucide-react";
-import { SignedIn, SignedOut, UserButton } from "@clerk/tanstack-react-start";
+import { UserButton, useAuth } from "@clerk/tanstack-react-start";
 import { useT } from "@/lib/i18n/provider";
 import { LanguageToggle } from "./LanguageToggle";
 
 export function SiteHeader() {
   const t = useT();
+  const { isSignedIn, isLoaded } = useAuth();
   const linkBase =
     "rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground";
   const linkActive = "text-foreground";
@@ -35,7 +36,7 @@ export function SiteHeader() {
             <CmdIcon className="h-3 w-3" /> K
           </span>
           <LanguageToggle />
-          <SignedOut>
+          {isLoaded && !isSignedIn && (
             <Link
               to="/sign-in/$"
               params={{ _splat: "" }}
@@ -44,14 +45,14 @@ export function SiteHeader() {
               <LogIn className="h-3 w-3" />
               {t.auth.signIn}
             </Link>
-          </SignedOut>
-          <SignedIn>
+          )}
+          {isLoaded && isSignedIn && (
             <div className="ml-1 flex items-center">
               <UserButton
                 appearance={{ elements: { avatarBox: "h-7 w-7 rounded-md" } }}
               />
             </div>
-          </SignedIn>
+          )}
         </nav>
       </div>
     </header>
