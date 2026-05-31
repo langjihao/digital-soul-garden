@@ -76,7 +76,7 @@ function PostDetail() {
         </header>
 
         <div className="mt-10">
-          <AnnotatedArticle paragraphs={paragraphs} />
+          <AnnotatedArticle paragraphs={paragraphs} documentId={post.slug} />
         </div>
 
         <div className="mx-auto max-w-3xl">

@@ -24,9 +24,15 @@ export function CommentSection({ threadKey }: { threadKey: string }) {
   const [anonEmail, setAnonEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  type CreateInput = {
+    documentId: string;
+    parentId?: string | null;
+    body: string;
+    authorName?: string;
+    authorEmail?: string;
+  };
   const mutation = useMutation({
-    mutationFn: (payload: Parameters<typeof createComment>[0]["data"]) =>
-      createComment({ data: payload }),
+    mutationFn: (payload: CreateInput) => createComment({ data: payload }),
     onSuccess: () => {
       setDraft("");
       setError(null);

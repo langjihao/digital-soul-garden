@@ -41,9 +41,16 @@ export function AnnotatedArticle({
   });
   const annotations: AnnotationRow[] = data?.annotations ?? [];
 
+  type CreateInput = {
+    documentId: string;
+    paragraphIndex: number;
+    quote: string;
+    body: string;
+    authorName?: string;
+    authorEmail?: string;
+  };
   const createMut = useMutation({
-    mutationFn: (payload: Parameters<typeof createAnnotation>[0]["data"]) =>
-      createAnnotation({ data: payload }),
+    mutationFn: (payload: CreateInput) => createAnnotation({ data: payload }),
     onSuccess: ({ annotation }) => {
       setDraftAnno(null);
       setDraftBody("");
@@ -133,7 +140,7 @@ export function AnnotatedArticle({
 
   // Render paragraph with <mark> around any annotation quotes
   const renderParagraph = (text: string, idx: number) => {
-    const marks = annotations.filter((a) => a.paragraphIndex === idx);
+    const marks = annotations.filter((a) => a.paragraph_index === idx);
     if (marks.length === 0) return text;
     // Split using each quote sequentially. Simple non-overlapping splitter.
     type Seg = { text: string; annoId?: string };
@@ -277,7 +284,7 @@ export function AnnotatedArticle({
                   annotation={a}
                   active={activeId === a.id}
                   onFocus={() => setActiveId(a.id)}
-                  canDelete={isSignedIn && a.clerk_user_id === user?.id}
+                  canDelete={!!isSignedIn && a.clerk_user_id === user?.id}
                   onClose={() => deleteMut.mutate(a.id)}
                   closeLabel={t.annotations.close}
                   locale={locale}
