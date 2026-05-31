@@ -1,21 +1,54 @@
 /**
- * Streaming chat → Dify via OpenAI-compatible endpoint, using AI SDK.
+ * Streaming chat with local RAG.
  *
- * Dify exposes `{base}/chat/completions` for Chat/Agent/Chatflow apps,
- * authenticated by the same `app-xxx` key as a Bearer token. This lets us
- * skip hand-rolled SSE parsing and use `streamText` + `toUIMessageStreamResponse`.
+ * Pipeline: hybrid_search retrieval → context injection →
+ * Lovable AI Gateway (google/gemini-3-flash-preview) streaming →
+ * citations returned as message metadata.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import {
+  createLovableAiGatewayProvider,
+  getLovableAiGatewayRunId,
+} from "@/lib/ai-gateway.server";
+import { buildContextBlock, retrieve, type RagSource } from "@/lib/rag/retrieve.server";
+
+function lastUserText(messages: UIMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== "user") continue;
+    return m.parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join(" ")
+      .trim();
+  }
+  return "";
+}
+
+function systemPrompt(contextBlock: string, hasContext: boolean): string {
+  const base = [
+    "你是这座数字花园的 **Digital Twin**：作者本人语气的 RAG 助手。",
+    "默认使用中文回答；用户用英文提问时再切换为英文。",
+    "回答必须基于下方「参考资料」。引用时在句末标注 `[n]`，n 对应资料编号。",
+    "找不到相关资料就直说不知道，不要编造。回答简洁，使用 Markdown。",
+  ].join("\n");
+  if (!hasContext) {
+    return (
+      base +
+      "\n\n（本轮没有检索到相关资料，可以坦白告诉用户花园里暂时没有相关内容。）"
+    );
+  }
+  return `${base}\n\n${contextBlock}`;
+}
 
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.DIFY_API_KEY;
-        const base = (process.env.DIFY_API_URL || "https://api.dify.ai/v1").replace(/\/$/, "");
-        if (!apiKey) return new Response("DIFY_API_KEY not configured", { status: 500 });
+        const apiKey = process.env.LOVABLE_API_KEY;
+        if (!apiKey) {
+          return new Response("LOVABLE_API_KEY not configured", { status: 500 });
+        }
 
         let body: { messages?: UIMessage[] };
         try {
@@ -27,20 +60,34 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("messages required", { status: 400 });
         }
 
-        const dify = createOpenAICompatible({
-          name: "dify",
-          baseURL: base,
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
+        const query = lastUserText(body.messages);
+        const bundle = query
+          ? await retrieve(query, 6)
+          : { sources: [] as RagSource[], chunks: [] };
+        const ctx = buildContextBlock(bundle);
 
-        // Dify ignores the model id for OpenAI-compat chat apps — it uses
-        // whatever the app is configured with — but the field is required.
+        const initialRunId = getLovableAiGatewayRunId(request);
+        const gateway = createLovableAiGatewayProvider(apiKey, initialRunId);
+        const model = gateway("google/gemini-3-flash-preview");
+
+        const modelMessages = await convertToModelMessages(body.messages);
         const result = streamText({
-          model: dify("dify"),
-          messages: convertToModelMessages(body.messages),
+          model,
+          system: systemPrompt(ctx, bundle.sources.length > 0),
+          messages: modelMessages,
         });
 
-        return result.toUIMessageStreamResponse({ originalMessages: body.messages });
+        return result.toUIMessageStreamResponse({
+          originalMessages: body.messages,
+          messageMetadata: ({ part }) => {
+            // Attach citations once when the assistant message starts so the
+            // client can render them alongside the streamed text.
+            if (part.type === "start") {
+              return { sources: bundle.sources };
+            }
+            return undefined;
+          },
+        });
       },
     },
   },
