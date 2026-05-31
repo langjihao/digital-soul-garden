@@ -16,6 +16,8 @@ import { SpotlightCursor } from "@/components/site/SpotlightCursor";
 import { CommandPalette } from "@/components/site/CommandPalette";
 import { FloatingChat } from "@/components/site/FloatingChat";
 import { I18nProvider, useT } from "@/lib/i18n/provider";
+import { ClerkProvider } from "@clerk/tanstack-react-start";
+import { CLERK_PUBLISHABLE_KEY } from "@/integrations/clerk/config";
 
 function NotFoundComponent() {
   const t = useT();
@@ -126,21 +128,35 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <SpotlightCursor />
-        <div className="relative z-10 flex min-h-screen flex-col">
-          <SiteHeader />
-          <main className="flex-1">
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-          </main>
-          <SiteFooter />
-        </div>
-        <CommandPalette />
-        <FloatingChat />
-      </I18nProvider>
-    </QueryClientProvider>
+    <ClerkProvider
+      publishableKey={CLERK_PUBLISHABLE_KEY}
+      appearance={{
+        variables: {
+          colorPrimary: "hsl(var(--primary))",
+          colorBackground: "hsl(var(--background))",
+          colorText: "hsl(var(--foreground))",
+          colorInputBackground: "hsl(var(--card))",
+          colorInputText: "hsl(var(--foreground))",
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+        },
+      }}
+    >
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <SpotlightCursor />
+          <div className="relative z-10 flex min-h-screen flex-col">
+            <SiteHeader />
+            <main className="flex-1">
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+            </main>
+            <SiteFooter />
+          </div>
+          <CommandPalette />
+          <FloatingChat />
+        </I18nProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
   );
 }
 
