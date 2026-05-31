@@ -1,17 +1,13 @@
 /**
- * Streaming chat proxy → Dify (https://api.dify.ai/v1/chat-messages).
+ * Streaming chat → Dify via OpenAI-compatible endpoint, using AI SDK.
  *
- * Request body: { query: string, conversationId?: string, user?: string }
- * Response: text/event-stream forwarding Dify's SSE frames unchanged, plus a
- * final `event: meta` line containing { conversationId } once Dify reports it.
+ * Dify exposes `{base}/chat/completions` for Chat/Agent/Chatflow apps,
+ * authenticated by the same `app-xxx` key as a Bearer token. This lets us
+ * skip hand-rolled SSE parsing and use `streamText` + `toUIMessageStreamResponse`.
  */
 import { createFileRoute } from "@tanstack/react-router";
-
-interface ChatRequest {
-  query?: string;
-  conversationId?: string | null;
-  user?: string;
-}
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -21,48 +17,30 @@ export const Route = createFileRoute("/api/chat")({
         const base = (process.env.DIFY_API_URL || "https://api.dify.ai/v1").replace(/\/$/, "");
         if (!apiKey) return new Response("DIFY_API_KEY not configured", { status: 500 });
 
-        let body: ChatRequest;
+        let body: { messages?: UIMessage[] };
         try {
-          body = (await request.json()) as ChatRequest;
+          body = (await request.json()) as { messages?: UIMessage[] };
         } catch {
           return new Response("invalid JSON", { status: 400 });
         }
-        const query = (body.query ?? "").toString().trim();
-        if (!query || query.length > 4000) {
-          return new Response("query is required (max 4000 chars)", { status: 400 });
+        if (!Array.isArray(body.messages) || body.messages.length === 0) {
+          return new Response("messages required", { status: 400 });
         }
 
-        const upstream = await fetch(`${base}/chat-messages`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            inputs: {},
-            query,
-            response_mode: "streaming",
-            user: body.user || "anonymous",
-            conversation_id: body.conversationId || "",
-          }),
+        const dify = createOpenAICompatible({
+          name: "dify",
+          baseURL: base,
+          headers: { Authorization: `Bearer ${apiKey}` },
         });
 
-        if (!upstream.ok || !upstream.body) {
-          const txt = await upstream.text().catch(() => "");
-          return new Response(`dify error [${upstream.status}]: ${txt.slice(0, 300)}`, {
-            status: 502,
-          });
-        }
-
-        // Forward SSE as-is.
-        return new Response(upstream.body, {
-          status: 200,
-          headers: {
-            "content-type": "text/event-stream; charset=utf-8",
-            "cache-control": "no-cache, no-transform",
-            connection: "keep-alive",
-          },
+        // Dify ignores the model id for OpenAI-compat chat apps — it uses
+        // whatever the app is configured with — but the field is required.
+        const result = streamText({
+          model: dify("dify"),
+          messages: convertToModelMessages(body.messages),
         });
+
+        return result.toUIMessageStreamResponse({ originalMessages: body.messages });
       },
     },
   },
