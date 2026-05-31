@@ -7,7 +7,7 @@ export const localeNames: Record<Locale, string> = {
   en: "EN",
 };
 
-export const translations = {
+const dict = {
   zh: {
     site: {
       title: "~/garden — 数字花园",
@@ -228,4 +228,5 @@ export const translations = {
   },
 } as const;
 
-export type Dict = typeof translations.zh;
+export type Dict = typeof dict.zh;
+export const translations: Record<Locale, Dict> = dict as unknown as Record<Locale, Dict>;
