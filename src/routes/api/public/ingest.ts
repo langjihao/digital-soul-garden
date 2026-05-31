@@ -9,6 +9,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { runFullResync, runIngestIssue, runIngestPush } from "@/lib/ingest/run.server";
+import type { IngestReport } from "@/lib/ingest/store.server";
 
 const PayloadSchema = z.object({
   event: z.string().min(1).max(64),
@@ -66,7 +67,7 @@ export const Route = createFileRoute("/api/public/ingest")({
         }
 
         try {
-          let reports;
+          let reports: IngestReport[];
           if (payload.full_resync || payload.event === "workflow_dispatch") {
             reports = await runFullResync();
           } else if (payload.event === "issues" && payload.issue_number) {
