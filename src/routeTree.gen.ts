@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TweetsRouteImport } from './routes/tweets'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as PostsRouteImport } from './routes/posts'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as AboutRouteImport } from './routes/about'
@@ -22,6 +23,11 @@ import { Route as ApiPublicIngestRouteImport } from './routes/api/public/ingest'
 const TweetsRoute = TweetsRouteImport.update({
   id: '/tweets',
   path: '/tweets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PostsRoute = PostsRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
   '/posts': typeof PostsRouteWithChildren
+  '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
   '/posts': typeof PostsRouteWithChildren
+  '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/media': typeof MediaRoute
   '/posts': typeof PostsRouteWithChildren
+  '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/media'
     | '/posts'
+    | '/search'
     | '/tweets'
     | '/posts/$slug'
     | '/sign-in/$'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/media'
     | '/posts'
+    | '/search'
     | '/tweets'
     | '/posts/$slug'
     | '/sign-in/$'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/media'
     | '/posts'
+    | '/search'
     | '/tweets'
     | '/posts/$slug'
     | '/sign-in/$'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   MediaRoute: typeof MediaRoute
   PostsRoute: typeof PostsRouteWithChildren
+  SearchRoute: typeof SearchRoute
   TweetsRoute: typeof TweetsRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
@@ -153,6 +166,13 @@ declare module '@tanstack/react-router' {
       path: '/tweets'
       fullPath: '/tweets'
       preLoaderRoute: typeof TweetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/posts': {
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   MediaRoute: MediaRoute,
   PostsRoute: PostsRouteWithChildren,
+  SearchRoute: SearchRoute,
   TweetsRoute: TweetsRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
@@ -237,3 +258,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
