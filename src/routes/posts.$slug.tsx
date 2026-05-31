@@ -64,12 +64,12 @@ function PostDetail() {
           </h1>
           <p className="mt-3 text-base text-muted-foreground">{pick(post.summary, locale)}</p>
           <div className="mt-4 flex flex-wrap gap-1.5">
-            {post.tags.map((t) => (
+            {post.tags.map((tag: string) => (
               <span
-                key={t}
+                key={tag}
                 className="rounded border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
               >
-                #{t}
+                #{tag}
               </span>
             ))}
           </div>
