@@ -41,12 +41,15 @@ export const hybridSearch = createServerFn({ method: "POST" })
       return { hits: [] };
     }
 
-    const rpc = supabaseAdmin.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: Array<{ chunk_id: string; document_id: string; content: string; score: number }> | null; error: { message: string } | null }>;
-
-    const { data: rows, error } = await rpc("hybrid_search", {
+    const { data: rows, error } = await (
+      supabaseAdmin.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{
+        data: Array<{ chunk_id: string; document_id: string; content: string; score: number }> | null;
+        error: { message: string } | null;
+      }>
+    ).call(supabaseAdmin, "hybrid_search", {
       query_text: data.query,
       query_embedding: embedding as unknown as string,
       match_count: limit,
