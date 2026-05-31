@@ -2,6 +2,7 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 import { clerkMiddleware } from "@clerk/tanstack-react-start/server";
 
 import { renderErrorPage } from "./lib/error-page";
+import { CLERK_PUBLISHABLE_KEY } from "./integrations/clerk/config";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -19,5 +20,8 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [errorMiddleware, clerkMiddleware()],
+  requestMiddleware: [
+    errorMiddleware,
+    clerkMiddleware({ publishableKey: CLERK_PUBLISHABLE_KEY }),
+  ],
 }));
