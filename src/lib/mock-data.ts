@@ -207,3 +207,10 @@ export function relativeTime(
   if (d < 7) return `${d} ${units.daysAgo}`;
   return new Date(iso).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric" });
 }
+
+export function getPostBody(post: MockPost, locale: Locale): string[] {
+  if (post.body) return post.body[locale];
+  // Fallback: synthesize a few paragraphs from the summary so every mock post is readable.
+  const s = pick(post.summary, locale);
+  return [s, s, s];
+}
