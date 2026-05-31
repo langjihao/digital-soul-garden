@@ -2,37 +2,31 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageTransition } from "@/components/site/PageTransition";
 import { PostCard } from "@/components/site/PostCard";
 import { mockPosts } from "@/lib/mock-data";
+import { useT } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/posts")({
   head: () => ({
     meta: [
-      { title: "Posts · ~/garden" },
-      {
-        name: "description",
-        content:
-          "Long-form writing on RAG, hybrid search, Postgres, and shipping small systems that punch above their weight.",
-      },
-      { property: "og:title", content: "Posts · ~/garden" },
-      {
-        property: "og:description",
-        content:
-          "Long-form writing on RAG, hybrid search, Postgres, and shipping small systems that punch above their weight.",
-      },
+      { title: "文章 · ~/garden" },
+      { name: "description", content: "关于 RAG、混合检索、Postgres 与轻量系统设计的长文。" },
+      { property: "og:title", content: "文章 · ~/garden" },
+      { property: "og:description", content: "关于 RAG、混合检索、Postgres 与轻量系统设计的长文。" },
     ],
   }),
   component: PostsPage,
 });
 
 function PostsPage() {
+  const t = useT();
   return (
     <PageTransition>
       <section className="mx-auto max-w-5xl px-4 py-12">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">$ ls posts/</p>
-        <h1 className="mt-2 text-3xl font-semibold text-foreground">Posts</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">{t.posts.cmd}</p>
+        <h1 className="mt-2 text-3xl font-semibold text-foreground">{t.posts.title}</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Written in MDX, pushed to GitHub, summarised and indexed by CI. The hybrid
-          search behind <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px]">⌘K</kbd>{" "}
-          covers everything below.
+          {t.posts.desc}
+          <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px]">{t.posts.descKbd}</kbd>
+          {t.posts.descTail}
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {mockPosts.map((p, i) => (

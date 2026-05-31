@@ -2,7 +2,8 @@ import { Command } from "cmdk";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { FileText, MessageSquare, Image as ImageIcon, Home, User, Search, Sparkles } from "lucide-react";
-import { mockPosts, mockTweets } from "@/lib/mock-data";
+import { mockPosts, mockTweets, pick } from "@/lib/mock-data";
+import { useI18n } from "@/lib/i18n/provider";
 
 /**
  * Global ⌘K command palette.
@@ -10,6 +11,7 @@ import { mockPosts, mockTweets } from "@/lib/mock-data";
  * Phase 4: wired to the hybridSearch server fn.
  */
 export function CommandPalette() {
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ export function CommandPalette() {
       onClick={() => setOpen(false)}
     >
       <Command
-        label="Command palette"
+        label={t.cmdk.placeholder}
         className="w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -50,7 +52,7 @@ export function CommandPalette() {
             value={query}
             onValueChange={setQuery}
             autoFocus
-            placeholder="Search posts, tweets, or ask the twin…"
+            placeholder={t.cmdk.placeholder}
             className="w-full bg-transparent py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
@@ -59,55 +61,58 @@ export function CommandPalette() {
         </div>
         <Command.List className="max-h-[60vh] overflow-y-auto p-2">
           <Command.Empty className="px-3 py-8 text-center text-sm text-muted-foreground">
-            Nothing matches "{query}". Try a topic or a slug.
+            {t.cmdk.empty.replace("{q}", query)}
           </Command.Empty>
 
-          <Command.Group heading="Ask" className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
+          <Command.Group heading={t.cmdk.groupAsk} className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
             {query.trim().length > 0 && (
               <CmdItem
                 onSelect={() => go("/")}
                 icon={<Sparkles className="h-4 w-4 text-primary" />}
-                title={`Ask the twin: "${query}"`}
-                hint="enter ↵"
+                title={`${t.cmdk.askPrefix}"${query}"`}
+                hint={t.cmdk.enter}
               />
             )}
           </Command.Group>
 
-          <Command.Group heading="Navigate" className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
-            <CmdItem onSelect={() => go("/")} icon={<Home className="h-4 w-4" />} title="Home" />
-            <CmdItem onSelect={() => go("/posts")} icon={<FileText className="h-4 w-4" />} title="Posts" />
-            <CmdItem onSelect={() => go("/tweets")} icon={<MessageSquare className="h-4 w-4" />} title="Tweets" />
-            <CmdItem onSelect={() => go("/media")} icon={<ImageIcon className="h-4 w-4" />} title="Media" />
-            <CmdItem onSelect={() => go("/about")} icon={<User className="h-4 w-4" />} title="About" />
+          <Command.Group heading={t.cmdk.groupNav} className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
+            <CmdItem onSelect={() => go("/")} icon={<Home className="h-4 w-4" />} title={t.cmdk.home} />
+            <CmdItem onSelect={() => go("/posts")} icon={<FileText className="h-4 w-4" />} title={t.nav.posts} />
+            <CmdItem onSelect={() => go("/tweets")} icon={<MessageSquare className="h-4 w-4" />} title={t.nav.tweets} />
+            <CmdItem onSelect={() => go("/media")} icon={<ImageIcon className="h-4 w-4" />} title={t.nav.media} />
+            <CmdItem onSelect={() => go("/about")} icon={<User className="h-4 w-4" />} title={t.nav.about} />
           </Command.Group>
 
-          <Command.Group heading="Posts" className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
+          <Command.Group heading={t.cmdk.groupPosts} className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
             {mockPosts.map((p) => (
               <CmdItem
                 key={p.slug}
                 onSelect={() => go("/posts")}
                 icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-                title={p.title}
+                title={pick(p.title, locale)}
                 hint={p.publishedAt}
               />
             ))}
           </Command.Group>
 
-          <Command.Group heading="Tweets" className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
-            {mockTweets.map((t) => (
-              <CmdItem
-                key={t.id}
-                onSelect={() => go("/tweets")}
-                icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
-                title={t.body.slice(0, 70) + (t.body.length > 70 ? "…" : "")}
-                hint={`#${t.id}`}
-              />
-            ))}
+          <Command.Group heading={t.cmdk.groupTweets} className="px-1 py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground">
+            {mockTweets.map((tw) => {
+              const body = pick(tw.body, locale);
+              return (
+                <CmdItem
+                  key={tw.id}
+                  onSelect={() => go("/tweets")}
+                  icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
+                  title={body.slice(0, 70) + (body.length > 70 ? "…" : "")}
+                  hint={`#${tw.id}`}
+                />
+              );
+            })}
           </Command.Group>
         </Command.List>
         <div className="flex items-center justify-between border-t border-border bg-muted/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          <span>Hybrid search · mock</span>
-          <span>↑ ↓ navigate · ↵ select</span>
+          <span>{t.cmdk.footerLeft}</span>
+          <span>{t.cmdk.footerRight}</span>
         </div>
       </Command>
     </div>

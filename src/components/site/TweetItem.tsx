@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { Heart, MessageCircle, Github } from "lucide-react";
 import type { MockTweet } from "@/lib/mock-data";
-import { relativeTime } from "@/lib/mock-data";
+import { relativeTime, pick } from "@/lib/mock-data";
+import { useI18n } from "@/lib/i18n/provider";
 
 export function TweetItem({ tweet, index = 0 }: { tweet: MockTweet; index?: number }) {
+  const { locale, t } = useI18n();
   return (
     <motion.li
       initial={{ opacity: 0, x: -6 }}
@@ -16,9 +18,9 @@ export function TweetItem({ tweet, index = 0 }: { tweet: MockTweet; index?: numb
       <div className="rounded-lg border border-border bg-card/60 p-4">
         <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
           <span>#{tweet.id}</span>
-          <span>{relativeTime(tweet.publishedAt)}</span>
+          <span>{relativeTime(tweet.publishedAt, t.units, locale)}</span>
         </div>
-        <p className="mt-2 text-sm leading-relaxed text-foreground">{tweet.body}</p>
+        <p className="mt-2 text-sm leading-relaxed text-foreground">{pick(tweet.body, locale)}</p>
         <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Heart className="h-3.5 w-3.5" /> {tweet.reactions}
@@ -27,7 +29,7 @@ export function TweetItem({ tweet, index = 0 }: { tweet: MockTweet; index?: numb
             <MessageCircle className="h-3.5 w-3.5" /> {tweet.comments}
           </span>
           <span className="ml-auto inline-flex items-center gap-1 font-mono text-[10px]">
-            <Github className="h-3 w-3" /> issue
+            <Github className="h-3 w-3" /> {t.units.issue}
           </span>
         </div>
       </div>
