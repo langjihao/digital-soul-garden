@@ -14,7 +14,237 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          citations: Json | null
+          content: string
+          created_at: string
+          id: string
+          role: string
+          session_id: string
+        }
+        Insert: {
+          citations?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          session_id: string
+        }
+        Update: {
+          citations?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      chunks: {
+        Row: {
+          content: string
+          created_at: string
+          document_id: string
+          embedding: string
+          id: string
+          ord: number
+          tokens: number | null
+          tsv: unknown
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_id: string
+          embedding: string
+          id?: string
+          ord: number
+          tokens?: number | null
+          tsv?: unknown
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string
+          id?: string
+          ord?: number
+          tokens?: number | null
+          tsv?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_tags: {
+        Row: {
+          document_id: string
+          tag_id: string
+        }
+        Insert: {
+          document_id: string
+          tag_id: string
+        }
+        Update: {
+          document_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_tags_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          author: string | null
+          body_md: string | null
+          content_hash: string
+          created_at: string
+          html: string | null
+          id: string
+          kind: Database["public"]["Enums"]["doc_kind"]
+          meta: Json
+          published_at: string | null
+          slug: string | null
+          source_id: string
+          summary: string | null
+          title: string | null
+          updated_at: string
+          url_github: string
+        }
+        Insert: {
+          author?: string | null
+          body_md?: string | null
+          content_hash: string
+          created_at?: string
+          html?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["doc_kind"]
+          meta?: Json
+          published_at?: string | null
+          slug?: string | null
+          source_id: string
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+          url_github: string
+        }
+        Update: {
+          author?: string | null
+          body_md?: string | null
+          content_hash?: string
+          created_at?: string
+          html?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["doc_kind"]
+          meta?: Json
+          published_at?: string | null
+          slug?: string | null
+          source_id?: string
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+          url_github?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      tweet_reactions: {
+        Row: {
+          created_at: string
+          document_id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tweet_reactions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +253,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      doc_kind: "post" | "tweet" | "media"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +380,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      doc_kind: ["post", "tweet", "media"],
+    },
   },
 } as const
