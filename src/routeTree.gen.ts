@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiPublicIngestRouteImport } from './routes/api/public/ingest'
 
 const TweetsRoute = TweetsRouteImport.update({
@@ -65,6 +66,11 @@ const PostsSlugRoute = PostsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => PostsRoute,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestRoute = ApiPublicIngestRouteImport.update({
   id: '/api/public/ingest',
   path: '/api/public/ingest',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/posts': typeof PostsRouteWithChildren
   '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
+  '/api/chat': typeof ApiChatRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/posts': typeof PostsRouteWithChildren
   '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
+  '/api/chat': typeof ApiChatRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/posts': typeof PostsRouteWithChildren
   '/search': typeof SearchRoute
   '/tweets': typeof TweetsRoute
+  '/api/chat': typeof ApiChatRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/posts'
     | '/search'
     | '/tweets'
+    | '/api/chat'
     | '/posts/$slug'
     | '/sign-in/$'
     | '/sign-up/$'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/posts'
     | '/search'
     | '/tweets'
+    | '/api/chat'
     | '/posts/$slug'
     | '/sign-in/$'
     | '/sign-up/$'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/posts'
     | '/search'
     | '/tweets'
+    | '/api/chat'
     | '/posts/$slug'
     | '/sign-in/$'
     | '/sign-up/$'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   PostsRoute: typeof PostsRouteWithChildren
   SearchRoute: typeof SearchRoute
   TweetsRoute: typeof TweetsRoute
+  ApiChatRoute: typeof ApiChatRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
   ApiPublicIngestRoute: typeof ApiPublicIngestRoute
@@ -224,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof PostsRoute
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ingest': {
       id: '/api/public/ingest'
       path: '/api/public/ingest'
@@ -251,6 +271,7 @@ const rootRouteChildren: RootRouteChildren = {
   PostsRoute: PostsRouteWithChildren,
   SearchRoute: SearchRoute,
   TweetsRoute: TweetsRoute,
+  ApiChatRoute: ApiChatRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
   ApiPublicIngestRoute: ApiPublicIngestRoute,
