@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageTransition } from "@/components/site/PageTransition";
 import { PostCard } from "@/components/site/PostCard";
-import { mockPosts } from "@/lib/mock-data";
+import { mockPosts, type MockPost } from "@/lib/mock-data";
 import { useT } from "@/lib/i18n/provider";
 import { listPostsFn } from "@/lib/api/documents.functions";
 
@@ -35,7 +35,7 @@ function PostsPage() {
           {t.posts.descTail}
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {posts.map((p, i) => (
+          {(posts as MockPost[]).map((p, i) => (
             <PostCard key={p.slug} post={p} index={i} />
           ))}
         </div>
