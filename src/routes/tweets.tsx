@@ -2,38 +2,31 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageTransition } from "@/components/site/PageTransition";
 import { TweetItem } from "@/components/site/TweetItem";
 import { mockTweets } from "@/lib/mock-data";
+import { useT } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/tweets")({
   head: () => ({
     meta: [
-      { title: "Tweets · ~/garden" },
-      {
-        name: "description",
-        content:
-          "Short notes stored as labelled GitHub Issues. Comments and reactions live on GitHub.",
-      },
-      { property: "og:title", content: "Tweets · ~/garden" },
-      {
-        property: "og:description",
-        content:
-          "Short notes stored as labelled GitHub Issues. Comments and reactions live on GitHub.",
-      },
+      { title: "碎念 · ~/garden" },
+      { name: "description", content: "以打了标签的 GitHub Issue 形式存放的短想法，评论与反应均在 GitHub 上。" },
+      { property: "og:title", content: "碎念 · ~/garden" },
+      { property: "og:description", content: "以打了标签的 GitHub Issue 形式存放的短想法，评论与反应均在 GitHub 上。" },
     ],
   }),
   component: TweetsPage,
 });
 
 function TweetsPage() {
+  const t = useT();
   return (
     <PageTransition>
       <section className="mx-auto max-w-3xl px-4 py-12">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">
-          $ git log --label tweet
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold text-foreground">Tweets</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">{t.tweets.cmd}</p>
+        <h1 className="mt-2 text-3xl font-semibold text-foreground">{t.tweets.title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Each entry is a GitHub Issue labelled <span className="font-mono text-primary">tweet</span>.
-          Sign in with GitHub to comment or react.
+          {t.tweets.desc1}
+          <span className="font-mono text-primary">{t.tweets.label}</span>
+          {t.tweets.desc2}
         </p>
         <ul className="mt-8 space-y-5">
           {mockTweets.map((t, i) => (
