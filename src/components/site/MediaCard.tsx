@@ -1,8 +1,13 @@
 import { motion } from "framer-motion";
 import { Play, Image as ImageIcon } from "lucide-react";
 import type { MockMedia } from "@/lib/mock-data";
+import { pick } from "@/lib/mock-data";
+import { useI18n } from "@/lib/i18n/provider";
 
 export function MediaCard({ item, index = 0 }: { item: MockMedia; index?: number }) {
+  const { locale } = useI18n();
+  const alt = pick(item.alt, locale);
+  const caption = item.caption ? pick(item.caption, locale) : alt;
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
@@ -14,7 +19,7 @@ export function MediaCard({ item, index = 0 }: { item: MockMedia; index?: number
         <div className="relative aspect-[4/3] w-full overflow-hidden">
           <img
             src={item.src}
-            alt={item.alt}
+            alt={alt}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
@@ -23,7 +28,7 @@ export function MediaCard({ item, index = 0 }: { item: MockMedia; index?: number
         <div className="relative flex aspect-[4/3] w-full items-center justify-center bg-gradient-to-br from-muted to-card">
           <button
             type="button"
-            aria-label={`Play ${item.alt}`}
+            aria-label={`Play ${alt}`}
             className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-background/80 text-primary transition-transform hover:scale-105"
           >
             <Play className="h-5 w-5" />
@@ -41,7 +46,7 @@ export function MediaCard({ item, index = 0 }: { item: MockMedia; index?: number
         ) : (
           <Play className="h-3.5 w-3.5 text-muted-foreground" />
         )}
-        <p className="truncate text-xs text-muted-foreground">{item.caption ?? item.alt}</p>
+        <p className="truncate text-xs text-muted-foreground">{caption}</p>
       </div>
     </motion.div>
   );
