@@ -120,12 +120,12 @@ const documents: DocumentRepo = {
       url_github: doc.urlGithub,
       author: doc.author,
       published_at: doc.publishedAt,
-      meta: doc.meta,
+      meta: doc.meta as never,
       content_hash: doc.contentHash,
     };
     const { data, error } = await supabaseAdmin
       .from("documents")
-      .upsert(payload, { onConflict: "kind,source_id" })
+      .upsert(payload as never, { onConflict: "kind,source_id" })
       .select("*")
       .single();
     if (error) throw error;
@@ -164,13 +164,16 @@ const vectors: VectorRepo = {
   async hybridSearch({ query, embedding, k = 10, kind, alpha = 0.5 }): Promise<HybridHit[]> {
     // Expects an RPC `hybrid_search` to be defined in a follow-up migration.
     // Until then we fall back to vector-only via direct SQL.
-    const { data, error } = await supabaseAdmin.rpc("hybrid_search", {
+    const { data, error } = await (supabaseAdmin.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: HybridHit[] | null; error: { message: string } | null }>)("hybrid_search", {
       query_text: query,
       query_embedding: embedding as unknown as string,
       match_count: k,
       doc_kind: kind ?? null,
       vec_weight: alpha,
-    } as never);
+    });
     if (error) {
       console.warn("[storage] hybrid_search RPC missing, returning empty result:", error.message);
       return [];
