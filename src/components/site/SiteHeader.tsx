@@ -37,14 +37,13 @@ export function SiteHeader() {
           </span>
           <LanguageToggle />
           {isLoaded && !isSignedIn && (
-            <Link
-              to="/sign-in/$"
-              params={{ _splat: "" }}
+            <a
+              href="/sign-in"
               className="ml-1 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-mono text-[11px] text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
             >
               <LogIn className="h-3 w-3" />
               {t.auth.signIn}
-            </Link>
+            </a>
           )}
           {isLoaded && isSignedIn && (
             <div className="ml-1 flex items-center">

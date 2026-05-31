@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Highlighter, MessageCircle, X, Send } from "lucide-react";
+import { Highlighter, MessageCircle, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/tanstack-react-start";
 import { useI18n, useT } from "@/lib/i18n/provider";
