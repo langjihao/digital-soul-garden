@@ -1,0 +1,80 @@
+# Self-host stack for the Digital Garden.
+# Run from this folder:  docker compose up -d
+# Reset state:           docker compose down -v
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: garden-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: garden
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: garden
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U garden -d garden"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: garden-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # web console
+    volumes:
+      - miniodata:/data
+
+  # One-shot bucket bootstrap.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3 &&
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} &&
+      mc mb -p local/media || true &&
+      mc anonymous set download local/media || true &&
+      echo 'bucket ready';
+      "
+
+  app:
+    image: node:20-alpine
+    container_name: garden-app
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      STORAGE_DRIVER: selfhost
+      DATABASE_URL: postgres://garden:${POSTGRES_PASSWORD:-changeme}@postgres:5432/garden
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_BASE_URL: http://localhost:9000/media
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: media
+      JWT_SECRET: ${JWT_SECRET:-replace-me-with-long-random-string}
+      LOVABLE_API_KEY: ${LOVABLE_API_KEY:-}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../:/app
+    command: sh -c "corepack enable && corepack prepare bun@latest --activate && bun install && bun run build && bun run start"
+
+volumes:
+  pgdata:
+  miniodata:
