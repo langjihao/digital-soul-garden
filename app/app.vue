@@ -32,5 +32,6 @@ useHead({
     </main>
     <SiteFooter />
     <CommandPalette />
+    <TwinChat />
   </div>
 </template>

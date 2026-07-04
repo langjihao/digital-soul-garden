@@ -14,7 +14,29 @@ const { data: surround } = await useAsyncData(`surround-${route.path}`, () =>
     .where('draft', '=', false).order('date', 'DESC'),
 )
 
+const { data: allPosts } = await useAsyncData('related-pool', () =>
+  queryCollection('posts').where('draft', '=', false).order('date', 'DESC').all(),
+)
+const related = computed(() => {
+  const mine = new Set((post.value?.tags as string[] | undefined) ?? [])
+  return (allPosts.value ?? [])
+    .filter(p => p.path !== route.path)
+    .map(p => ({ p, score: ((p.tags as string[] | undefined) ?? []).filter(t2 => mine.has(t2)).length }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 2)
+    .map(x => x.p)
+})
+
 useHead({ title: () => `${post.value?.title ?? ''} · ~/garden` })
+useSeoMeta({
+  description: () => post.value?.description ?? '',
+  ogTitle: () => post.value?.title ?? '',
+  ogDescription: () => post.value?.description ?? '',
+  ogType: 'article',
+  ogImage: 'https://blog.iqiqiqi.me/og.png',
+  twitterCard: 'summary_large_image',
+})
 
 const dateLabel = computed(() => {
   if (!post.value?.date) return ''
@@ -46,7 +68,11 @@ const toc = computed(() => post.value?.body?.toc?.links ?? [])
       </div>
     </header>
 
-    <div class="mt-10 flex gap-10">
+    <div class="mt-8 max-w-2xl">
+      <TwinSummary :path="route.path" />
+    </div>
+
+    <div class="mt-8 flex gap-10">
       <article class="prose min-w-0 flex-1 pb-8">
         <ContentRenderer :value="post" />
       </article>
@@ -71,6 +97,13 @@ const toc = computed(() => post.value?.body?.toc?.links ?? [])
         </div>
       </aside>
     </div>
+
+    <section v-if="related.length" class="mt-2 border-t border-border pt-6">
+      <TerminalPrompt cmd="grep --related" />
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <PostCard v-for="p in related" :key="p.path" :post="p" />
+      </div>
+    </section>
 
     <nav class="mt-4 mb-2 grid gap-3 sm:grid-cols-2 border-t border-border pt-6 pb-6">
       <NuxtLink

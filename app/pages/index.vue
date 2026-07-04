@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { t } = useLang()
+const { show: showTwin } = useTwin()
 
 const { data: posts } = await useAsyncData('home-posts', () =>
   queryCollection('posts').where('draft', '=', false).order('date', 'DESC').limit(4).all(),
@@ -32,7 +33,8 @@ const { data: tweets } = await useAsyncData('home-tweets', () =>
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
             </NuxtLink>
             <button
-              class="inline-flex items-center gap-2 rounded-lg border border-border-strong px-5 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:text-accent hover:border-accent"
+              class="pressable inline-flex items-center gap-2 rounded-lg border border-border-strong px-5 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:text-accent hover:border-accent"
+              @click="showTwin()"
             >
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="7" width="14" height="12" rx="2"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg>
               {{ t.talkToTwin }}
