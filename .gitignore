@@ -1,0 +1,7 @@
+node_modules
+.nuxt
+.output
+dist
+dev.log
+nohup.out
+.DS_Store

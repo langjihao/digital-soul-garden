@@ -1,0 +1,7 @@
+kind: book
+title: 《数据密集型应用系统设计》重读
+note: >-
+  第三遍。这次只看第三章：日志结构存储引擎——为了给碎念系统选存储。
+date: '2026-05-06'
+cover: /img/book-spine.svg
+rating: 5

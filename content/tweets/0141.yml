@@ -1,0 +1,8 @@
+num: 141
+date: '2026-05-28'
+text: >-
+  今年最爽的 DX 升级：每篇博客就是仓库里的一个 `.md`，`git push` 即发布。
+likes: 22
+replies: 3
+tags:
+  - devx

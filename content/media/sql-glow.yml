@@ -1,0 +1,6 @@
+kind: photo
+title: 一段我挺得意的混合检索查询
+note: >-
+  40 行 SQL 在 4ms 内跑完两路召回加权合成。截图留念。
+date: '2026-04-30'
+cover: /img/sql-glow.svg

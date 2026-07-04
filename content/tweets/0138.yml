@@ -1,0 +1,8 @@
+num: 138
+date: '2026-05-21'
+text: >-
+  生产事故复盘：pk 和 sk 来自两个 Clerk 实例，整站对真实浏览器 500 了三周，curl 一直 200。监控要用真浏览器。
+likes: 64
+replies: 15
+tags:
+  - postmortem

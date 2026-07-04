@@ -1,0 +1,8 @@
+num: 132
+date: '2026-04-19'
+text: >-
+  看到有人给个人博客上 k8s。朋友，你的 QPS 是 0.001，nginx 反代 + systemd 能陪你走到退休。
+likes: 88
+replies: 21
+tags:
+  - ops

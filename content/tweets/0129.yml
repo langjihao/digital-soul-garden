@@ -1,0 +1,8 @@
+num: 129
+date: '2026-03-28'
+text: >-
+  凌晨三点的部署没有一次是必要的。设个 cron 在早上九点自动发布，睡觉。
+likes: 41
+replies: 8
+tags:
+  - ops

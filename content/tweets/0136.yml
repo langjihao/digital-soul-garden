@@ -1,0 +1,8 @@
+num: 136
+date: '2026-05-14'
+text: >-
+  把 swap 从 0 加到 2G 之后，vite build 再也没被 OOM killer 干掉过。4G 内存的小机器们记得这一条。
+likes: 33
+replies: 5
+tags:
+  - ops
