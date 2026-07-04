@@ -39,7 +39,10 @@ const toc = computed(() => post.value?.body?.toc?.links ?? [])
       <h1 class="mt-3 text-2xl sm:text-[2.1rem] font-bold leading-snug tracking-tight">{{ post.title }}</h1>
       <p class="mt-4 text-base leading-relaxed text-ink-soft">{{ post.description }}</p>
       <div v-if="post.tags?.length" class="mt-4 flex flex-wrap gap-2.5">
-        <span v-for="tag in post.tags" :key="tag" class="font-mono text-xs text-muted"><span class="text-accent/70">#</span> {{ tag }}</span>
+        <NuxtLink
+          v-for="tag in post.tags" :key="tag" :to="`/tags/${tag}`"
+          class="font-mono text-xs text-muted hover:text-accent transition-colors"
+        ><span class="text-accent/70">#</span> {{ tag }}</NuxtLink>
       </div>
     </header>
 

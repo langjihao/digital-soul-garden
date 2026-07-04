@@ -19,7 +19,10 @@ const filtered = computed(() =>
 
 <template>
   <div class="mx-auto max-w-5xl px-5 pt-12">
-    <TerminalPrompt cmd="ls posts/" typed />
+    <div class="flex items-center justify-between">
+      <TerminalPrompt cmd="ls posts/" typed />
+      <NuxtLink to="/archive" class="font-mono text-xs text-muted hover:text-accent transition-colors">tree --by-year →</NuxtLink>
+    </div>
     <h1 class="mt-3 text-2xl sm:text-3xl font-bold">{{ t.posts }}</h1>
     <p class="mt-3 max-w-xl text-sm sm:text-base text-ink-soft leading-relaxed">
       以 Markdown 写作、推送到 GitHub 即发布。⌘K 背后的检索覆盖下方所有内容。

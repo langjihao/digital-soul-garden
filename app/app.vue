@@ -1,4 +1,18 @@
 <script setup lang="ts">
+const { toggle: togglePalette, hide } = usePalette()
+
+onMounted(() => {
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault()
+      togglePalette()
+    }
+  })
+})
+
+const route = useRoute()
+watch(() => route.path, () => hide())
+
 useHead({
   script: [
     {
@@ -17,5 +31,6 @@ useHead({
       <NuxtPage />
     </main>
     <SiteFooter />
+    <CommandPalette />
   </div>
 </template>

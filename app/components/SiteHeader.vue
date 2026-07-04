@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { lang, t, toggle: toggleLang } = useLang()
 const { isDark, toggle: toggleTheme } = useTheme()
+const { show: showPalette } = usePalette()
 const route = useRoute()
 
 const nav = computed(() => [
@@ -32,8 +33,9 @@ const isActive = (to: string) => route.path === to || route.path.startsWith(to +
 
       <div class="flex items-center gap-2 shrink-0">
         <button
-          class="hidden sm:flex items-center gap-2 text-xs font-mono text-muted border border-border rounded-md px-2.5 py-1.5 hover:border-border-strong hover:text-ink-soft transition-colors"
+          class="pressable hidden sm:flex items-center gap-2 text-xs font-mono text-muted border border-border rounded-md px-2.5 py-1.5 hover:border-border-strong hover:text-ink-soft transition-colors"
           title="搜索 (⌘K)"
+          @click="showPalette()"
         >
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <kbd class="text-[10px]">⌘K</kbd>
