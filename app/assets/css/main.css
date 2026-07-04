@@ -94,6 +94,63 @@ body {
 .page-enter-from { opacity: 0; transform: translateY(8px); }
 .page-leave-to { opacity: 0; transform: translateY(-4px); }
 
+/* scroll reveal (v-reveal) */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.55s cubic-bezier(0.2, 0, 0, 1), transform 0.55s cubic-bezier(0.2, 0, 0, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-item.revealed { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-item { opacity: 1; transform: none; transition: none; }
+}
+
+/* hero typewriter: monospace cmd typed via steps() */
+.typed {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  width: 0;
+  animation: type-in 0.9s steps(12, end) 0.15s forwards;
+}
+@keyframes type-in { to { width: var(--typed-ch, 8ch); } }
+@media (prefers-reduced-motion: reduce) { .typed { width: var(--typed-ch, 8ch); animation: none; } }
+
+/* card hover sweep: a thin phosphor line that slides across the top border */
+.card-sweep { position: relative; overflow: hidden; }
+.card-sweep::before {
+  content: "";
+  position: absolute; top: 0; left: -40%;
+  width: 40%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.card-sweep:hover::before { opacity: 1; animation: sweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+@keyframes sweep { to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .card-sweep:hover::before { animation: none; opacity: 0; } }
+
+/* press feedback */
+.pressable { transition: transform 0.12s ease; }
+.pressable:active { transform: scale(0.97); }
+
+/* theme toggle icon spin */
+.icon-spin-in { animation: spin-in 0.4s cubic-bezier(0.2, 0, 0, 1); }
+@keyframes spin-in { from { transform: rotate(-90deg) scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* nav underline slide */
+.nav-link { position: relative; }
+.nav-link::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: 4px;
+  height: 1.5px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+.nav-link:hover::after { transform: scaleX(1); }
+.nav-link.nav-active::after { transform: scaleX(1); }
+
 /* ---------- prose (article body) ---------- */
 .prose { max-width: 42rem; line-height: 1.85; font-size: 1.0625rem; }
 .prose > * + * { margin-top: 1.1em; }

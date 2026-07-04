@@ -14,7 +14,7 @@ const dateLabel = computed(() => {
 <template>
   <NuxtLink
     :to="post.path"
-    class="group block rounded-xl border border-border bg-surface p-5 sm:p-6 transition-all duration-300 hover:border-border-strong hover:bg-surface-hover hover:shadow-[var(--glow)] hover:-translate-y-0.5"
+    class="card-sweep group block rounded-xl border border-border bg-surface p-5 sm:p-6 transition-all duration-300 hover:border-border-strong hover:bg-surface-hover hover:shadow-[var(--glow)] hover:-translate-y-0.5"
   >
     <div class="flex items-center gap-3 font-mono text-xs text-muted">
       <time>{{ dateLabel }}</time>

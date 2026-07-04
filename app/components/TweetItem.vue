@@ -19,7 +19,7 @@ const html = computed(() =>
 
 <template>
   <article
-    class="group relative rounded-xl border border-border bg-surface p-4 sm:p-5 transition-all duration-300 hover:border-border-strong hover:bg-surface-hover"
+    class="card-sweep group relative rounded-xl border border-border bg-surface p-4 sm:p-5 transition-all duration-300 hover:border-border-strong hover:bg-surface-hover"
   >
     <div class="flex items-center gap-3 font-mono text-xs text-muted">
       <span class="text-accent"># {{ tweet.num }}</span>

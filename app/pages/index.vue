@@ -16,7 +16,7 @@ const { data: tweets } = await useAsyncData('home-tweets', () =>
       <div class="absolute inset-0 garden-grid" aria-hidden="true" />
       <div class="relative mx-auto max-w-5xl px-5 pt-16 pb-14 sm:pt-24 sm:pb-20">
         <div class="max-w-2xl">
-          <TerminalPrompt cmd="whoami" />
+          <TerminalPrompt cmd="whoami" typed />
           <h1 class="mt-4 text-3xl sm:text-[2.6rem] font-bold leading-tight tracking-tight">
             {{ t.taglinePre }}<span class="text-accent">{{ t.taglineHi }}</span>{{ t.taglinePost }}
           </h1>
@@ -44,7 +44,7 @@ const { data: tweets } = await useAsyncData('home-tweets', () =>
 
     <!-- latest posts -->
     <section class="mx-auto max-w-5xl px-5 mt-14">
-      <div class="flex items-baseline justify-between">
+      <div v-reveal class="flex items-baseline justify-between">
         <div>
           <TerminalPrompt cmd="cd /posts" />
           <h2 class="mt-2 text-xl font-bold">{{ t.latestPosts }}</h2>
@@ -52,13 +52,13 @@ const { data: tweets } = await useAsyncData('home-tweets', () =>
         <NuxtLink to="/posts" class="font-mono text-xs text-muted hover:text-accent transition-colors">{{ t.allPosts }} →</NuxtLink>
       </div>
       <div class="mt-6 grid gap-4 sm:grid-cols-2">
-        <PostCard v-for="post in posts" :key="post.path" :post="post" />
+        <PostCard v-for="(post, i) in posts" :key="post.path" v-reveal="i" :post="post" />
       </div>
     </section>
 
     <!-- recent tweets -->
     <section class="mx-auto max-w-5xl px-5 mt-14">
-      <div class="flex items-baseline justify-between">
+      <div v-reveal class="flex items-baseline justify-between">
         <div>
           <TerminalPrompt cmd="cd /tweets" />
           <h2 class="mt-2 text-xl font-bold">{{ t.latestTweets }}</h2>
@@ -66,13 +66,13 @@ const { data: tweets } = await useAsyncData('home-tweets', () =>
         <NuxtLink to="/tweets" class="font-mono text-xs text-muted hover:text-accent transition-colors">git log →</NuxtLink>
       </div>
       <div class="mt-6 grid gap-3">
-        <TweetItem v-for="tw in tweets" :key="tw.num" :tweet="tw" />
+        <TweetItem v-for="(tw, i) in tweets" :key="tw.num" v-reveal="i" :tweet="tw" />
       </div>
     </section>
 
     <!-- twin teaser -->
     <section class="mx-auto max-w-5xl px-5 mt-16">
-      <div class="rounded-2xl border border-border bg-surface p-8 sm:p-10 relative overflow-hidden">
+      <div v-reveal class="rounded-2xl border border-border bg-surface p-8 sm:p-10 relative overflow-hidden">
         <div class="absolute inset-0 garden-grid opacity-60" />
         <div class="relative">
           <TerminalPrompt cmd="./digital_twin --rag" />

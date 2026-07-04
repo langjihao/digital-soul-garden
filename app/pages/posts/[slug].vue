@@ -27,6 +27,7 @@ const toc = computed(() => post.value?.body?.toc?.links ?? [])
 
 <template>
   <div v-if="post" class="mx-auto max-w-5xl px-5 pt-12">
+    <ReadingProgress />
     <NuxtLink to="/posts" class="font-mono text-xs text-muted hover:text-accent transition-colors">← {{ t.backToPosts }}</NuxtLink>
 
     <header class="mt-6 max-w-2xl">

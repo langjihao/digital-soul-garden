@@ -5,7 +5,7 @@ useHead({ title: computed(() => `${t.value.about} · ~/garden`) })
 
 <template>
   <div class="mx-auto max-w-3xl px-5 pt-12">
-    <TerminalPrompt cmd="cat about.md" />
+    <TerminalPrompt cmd="cat about.md" typed />
     <h1 class="mt-3 text-2xl sm:text-3xl font-bold">{{ t.about }}</h1>
 
     <div class="prose mt-8 pb-8">

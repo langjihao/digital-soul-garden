@@ -19,7 +19,7 @@ const filtered = computed(() =>
 
 <template>
   <div class="mx-auto max-w-5xl px-5 pt-12">
-    <TerminalPrompt cmd="ls posts/" />
+    <TerminalPrompt cmd="ls posts/" typed />
     <h1 class="mt-3 text-2xl sm:text-3xl font-bold">{{ t.posts }}</h1>
     <p class="mt-3 max-w-xl text-sm sm:text-base text-ink-soft leading-relaxed">
       以 Markdown 写作、推送到 GitHub 即发布。⌘K 背后的检索覆盖下方所有内容。
@@ -40,7 +40,7 @@ const filtered = computed(() =>
     </div>
 
     <div class="mt-8 grid gap-4 pb-4">
-      <PostCard v-for="post in filtered" :key="post.path" :post="post" />
+      <PostCard v-for="(post, i) in filtered" :key="post.path" v-reveal="i" :post="post" />
     </div>
   </div>
 </template>

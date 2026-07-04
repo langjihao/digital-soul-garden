@@ -14,7 +14,7 @@ const meta = computed(() => kindMeta[props.item.kind] ?? kindMeta.photo!)
 </script>
 
 <template>
-  <article class="group rounded-xl border border-border bg-surface overflow-hidden transition-all duration-300 hover:border-border-strong hover:-translate-y-0.5 hover:shadow-[var(--glow)]">
+  <article class="card-sweep group rounded-xl border border-border bg-surface overflow-hidden transition-all duration-300 hover:border-border-strong hover:-translate-y-0.5 hover:shadow-[var(--glow)]">
     <div v-if="item.cover" class="aspect-[4/3] overflow-hidden border-b border-border">
       <img :src="item.cover" :alt="item.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" loading="lazy">
     </div>
