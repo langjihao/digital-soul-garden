@@ -19,7 +19,16 @@ interface LifeData {
   items: LifeItem[]
 }
 
-const { data } = await useAsyncData('life-wall', () => $fetch<LifeData>('/api/life'))
+interface AlbumData {
+  enabled: boolean
+  photos: { id: string; caption?: string; takenAt: string; location?: string; thumb: string; preview: string }[]
+  cities: { name: string; province: string; x: number; y: number; count: number; last: string }[]
+}
+
+const [{ data }, { data: album }] = await Promise.all([
+  useAsyncData('life-wall', () => $fetch<LifeData>('/api/life')),
+  useAsyncData('life-album', () => $fetch<AlbumData>('/api/life/album')),
+])
 
 const SHELF_LIMIT = 12
 const shelves = computed(() => {
@@ -74,7 +83,31 @@ const fmtDate = (iso: string) => iso.slice(0, 10)
         <p class="mt-1 text-2xl font-bold text-ink">{{ stats.workouts.distanceKm }}<span class="ml-1 text-sm font-normal text-muted">km</span></p>
         <p class="font-mono text-[11px] text-accent mt-0.5">{{ stats.workouts.count }} {{ t.lifeWorkoutTimes }} · {{ stats.workouts.durationHour }}h</p>
       </div>
+      <div v-if="album?.cities.length" class="rounded-xl border border-border bg-surface p-4">
+        <p class="font-mono text-[11px] text-muted uppercase tracking-wide">travel</p>
+        <p class="mt-1 text-2xl font-bold text-ink">{{ album.cities.length }}<span class="ml-1 text-sm font-normal text-muted">{{ t.lifeCitiesLit }}</span></p>
+        <p class="font-mono text-[11px] text-accent mt-0.5">{{ album.photos.length }} 📷 · {{ new Set(album.cities.map(c => c.province).filter(Boolean)).size }} {{ t.lifeProvinces }}</p>
+      </div>
     </div>
+
+    <!-- 旅行地图 -->
+    <section v-if="album?.cities.length" v-reveal class="mt-10">
+      <TerminalPrompt cmd="map --lit-cities" />
+      <div class="mt-4">
+        <TravelMap :cities="album.cities" />
+      </div>
+    </section>
+
+    <!-- 时间轴相册 -->
+    <section v-if="album?.photos.length" v-reveal class="mt-10">
+      <div class="flex items-baseline justify-between">
+        <TerminalPrompt cmd="git log --album" />
+        <span class="font-mono text-[11px] text-muted">{{ album.photos.length }} 📷</span>
+      </div>
+      <div class="mt-5">
+        <PhotoTimeline :photos="album.photos" />
+      </div>
+    </section>
 
     <!-- 运动热力图 -->
     <section v-if="workouts.length" v-reveal class="mt-10">
