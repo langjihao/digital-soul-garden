@@ -12,16 +12,6 @@ onMounted(() => {
 
 const route = useRoute()
 watch(() => route.path, () => hide())
-
-useHead({
-  script: [
-    {
-      // set theme class before paint to avoid FOUC
-      innerHTML: `(function(){try{var t=localStorage.getItem('garden-theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){document.documentElement.classList.add('dark')}})()`,
-      tagPosition: 'head',
-    },
-  ],
-})
 </script>
 
 <template>

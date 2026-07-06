@@ -24,6 +24,13 @@ export default defineNuxtConfig({
         { rel: 'alternate', type: 'application/rss+xml', title: '~/garden RSS', href: '/rss.xml' },
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
       ],
+      script: [
+        {
+          // set theme class before paint to avoid FOUC (global: applies to error page too)
+          innerHTML: `(function(){try{var t=localStorage.getItem('garden-theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){document.documentElement.classList.add('dark')}})()`,
+          tagPosition: 'head',
+        },
+      ],
     },
   },
   content: {

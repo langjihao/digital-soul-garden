@@ -16,22 +16,22 @@ const isActive = (to: string) => route.path === to || route.path.startsWith(to +
 
 <template>
   <header class="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur-md">
-    <div class="mx-auto max-w-5xl px-5 h-14 flex items-center gap-6">
+    <div class="mx-auto max-w-5xl px-3 sm:px-5 h-14 flex items-center gap-2 sm:gap-6">
       <NuxtLink to="/" class="font-mono text-sm font-semibold text-ink hover:text-accent transition-colors shrink-0">
         <span class="text-accent">~</span>/garden<span class="caret" />
       </NuxtLink>
 
-      <nav class="flex items-center gap-1 text-sm flex-1">
+      <nav class="flex items-center gap-0 sm:gap-1 text-[13px] sm:text-sm flex-1 min-w-0">
         <NuxtLink
           v-for="item in nav" :key="item.to" :to="item.to"
-          class="nav-link px-3 py-1.5 rounded-md transition-colors"
+          class="nav-link px-2 sm:px-3 py-1.5 rounded-md transition-colors whitespace-nowrap"
           :class="isActive(item.to) ? 'nav-active text-accent font-medium' : 'text-ink-soft hover:text-ink'"
         >
           {{ item.label }}
         </NuxtLink>
       </nav>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <button
           class="pressable hidden sm:flex items-center gap-2 text-xs font-mono text-muted border border-border rounded-md px-2.5 py-1.5 hover:border-border-strong hover:text-ink-soft transition-colors"
           title="搜索 (⌘K)"
