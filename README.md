@@ -8,7 +8,7 @@
 - **⌘K 命令面板**：全站检索（文章/碎念/媒体）+ 页面跳转 + 主题/语言切换
 - **数字孪生**：右下角 RAG 对话，SSE 流式输出；文章页支持「本文/全站」双范围问答（本文模式注入全文）
 - **混合检索**：词法 2-gram 打分 + `gemini-embedding-001` 余弦相似度等权合并，向量按内容哈希增量嵌入并落盘；无 key / 限流时自动退回纯词法
-- **多级推理降级**：Anthropic（可选）→ Gemini 主模型 → Gemini lite → 检索降级，429/5xx/空输出自动降档，永不白屏
+- **多级推理降级**：OpenRouter 免费池（多模型按序）→ Anthropic（可选）→ Gemini 主 → Gemini lite → 检索降级，429/5xx/空输出自动降档，永不白屏
 - **孪生摘要**：文章页 tl;dr 卡片，结果持久化到磁盘（含内容哈希失效），重启不重耗配额
 - **动态 OG 图**：`/og/posts/<slug>.png` 按文章实时渲染终端风分享图（SVG → sharp），内存缓存
 - **评论**：giscus（GitHub Discussions），跟随站内主题/语言切换，未配置时自动隐藏
@@ -37,7 +37,9 @@ npm run dev        # http://127.0.0.1:3001
 
 | 变量 | 说明 |
 | --- | --- |
-| `GEMINI_API_KEY` | 孪生推理 + 向量检索（Google AI Studio） |
+| `OPENROUTER_API_KEY` | 孪生推理首选来源（OpenRouter 免费池） |
+| `OPENROUTER_MODELS` | 逗号分隔按序降档，默认 `qwen3-next-80b:free,nemotron-3-super:free`（全名见 llm.ts） |
+| `GEMINI_API_KEY` | 推理次选 + 向量检索（Google AI Studio；embedding 只在这里，删了混合检索会退词法） |
 | `GEMINI_MODEL` | 主模型，默认 `gemini-3.5-flash` |
 | `GEMINI_MODEL_LITE` | 限流降档模型，默认 `gemini-2.5-flash-lite` |
 | `GEMINI_THINKING_BUDGET` | 思考 token 预算，默认 `0`（必须关闭，否则正文为空） |

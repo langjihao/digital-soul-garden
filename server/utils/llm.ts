@@ -20,6 +20,49 @@ function geminiModels(): string[] {
   return primary === lite ? [primary] : [primary, lite]
 }
 
+// OpenRouter 免费池上游限流频繁，按序尝试多个模型；逗号分隔可配
+function openRouterModels(): string[] {
+  return (process.env.OPENROUTER_MODELS
+    || 'qwen/qwen3-next-80b-a3b-instruct:free,nvidia/nemotron-3-super-120b-a12b:free')
+    .split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function toOpenAIBody(model: string, opts: LlmOpts, stream: boolean) {
+  return {
+    model,
+    stream,
+    max_tokens: opts.maxTokens ?? 600,
+    temperature: opts.temperature ?? 0.4,
+    messages: [{ role: 'system', content: opts.system }, ...opts.messages],
+  }
+}
+
+const OR_HEADERS = (key: string) => ({
+  'Authorization': `Bearer ${key}`,
+  'content-type': 'application/json',
+  'HTTP-Referer': 'https://blog.iqiqiqi.me',
+  'X-Title': 'garden digital twin',
+})
+
+async function streamOpenRouter(key: string, model: string, opts: LlmOpts, onDelta: (t: string) => void) {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: OR_HEADERS(key),
+    body: JSON.stringify(toOpenAIBody(model, opts, true)),
+  })
+  if (!res.ok || !res.body) throw new UpstreamError(res.status)
+  let emitted = false
+  try {
+    for await (const evt of sseJson(res.body)) {
+      // 流中途的错误帧（上游限流常以 200 流 + error 帧出现）
+      if ((evt as { error?: unknown }).error) throw new Error('stream error')
+      const delta = (evt as { choices?: { delta?: { content?: unknown } }[] })?.choices?.[0]?.delta?.content
+      if (typeof delta === 'string' && delta) { emitted = true; onDelta(delta) }
+    }
+  } catch { throw new UpstreamError(0, emitted) }
+  if (!emitted) throw new UpstreamError(-1)
+}
+
 function toGeminiBody(opts: LlmOpts) {
   return {
     systemInstruction: { parts: [{ text: opts.system }] },
@@ -99,14 +142,26 @@ async function* sseJson(body: ReadableStream<Uint8Array>) {
 }
 
 /**
- * 流式推理，按 provider 链依次尝试：Anthropic → Gemini 主模型 → Gemini lite。
+ * 流式推理，按 provider 链依次尝试：OpenRouter 免费池（多模型）→ Anthropic → Gemini 主 → Gemini lite。
  * 返回成功的 provider 标识；全部不可用返回 null（由调用方走检索降级）。
  * 若某 provider 已输出部分内容后中断，不再切换（避免重复输出），按成功返回。
  */
 export async function streamLLM(opts: LlmOpts, onDelta: (t: string) => void): Promise<string | null> {
+  const openRouterKey = process.env.OPENROUTER_API_KEY
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const geminiKey = process.env.GEMINI_API_KEY
 
+  if (openRouterKey) {
+    for (const model of openRouterModels()) {
+      try {
+        await streamOpenRouter(openRouterKey, model, opts, onDelta)
+        return `openrouter:${model}`
+      } catch (e) {
+        if (e instanceof UpstreamError && e.partial) return `openrouter:${model}`
+        if (e instanceof UpstreamError && ![429, 500, 502, 503, 408, 0, -1].includes(e.status)) break
+      }
+    }
+  }
   if (anthropicKey) {
     try {
       await streamAnthropic(anthropicKey, opts, onDelta)
@@ -132,9 +187,29 @@ export async function streamLLM(opts: LlmOpts, onDelta: (t: string) => void): Pr
 
 /** 非流式推理，同一条 provider 链。返回 { text, provider } 或 null。 */
 export async function completeLLM(opts: LlmOpts): Promise<{ text: string; provider: string } | null> {
+  const openRouterKey = process.env.OPENROUTER_API_KEY
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const geminiKey = process.env.GEMINI_API_KEY
 
+  if (openRouterKey) {
+    for (const model of openRouterModels()) {
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: OR_HEADERS(openRouterKey),
+          body: JSON.stringify(toOpenAIBody(model, { ...opts, maxTokens: opts.maxTokens ?? 300, temperature: opts.temperature ?? 0.2 }, false)),
+        })
+        if (!res.ok) {
+          if ([429, 500, 502, 503, 408].includes(res.status)) continue
+          break
+        }
+        const data = await res.json()
+        if (data?.error) continue
+        const text = data?.choices?.[0]?.message?.content
+        if (typeof text === 'string' && text.trim()) return { text: text.trim(), provider: `openrouter:${model}` }
+      } catch { /* try next model */ }
+    }
+  }
   if (anthropicKey) {
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -179,5 +254,5 @@ export async function completeLLM(opts: LlmOpts): Promise<{ text: string; provid
 }
 
 export function hasLLMKey(): boolean {
-  return !!(process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY)
+  return !!(process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY)
 }
