@@ -96,24 +96,30 @@ export async function getGardenChunks(event: H3Event): Promise<GardenChunk[]> {
 }
 
 // naive lexical scoring: term hits weighted by field + brevity
-export function topChunks(chunks: GardenChunk[], query: string, k = 4): GardenChunk[] {
+export function lexicalScores(chunks: GardenChunk[], query: string): number[] {
   const terms = query
     .toLowerCase()
     .split(/[\s,，。？?!！、;；:：]+/)
     .flatMap(t => (/^[一-鿿]+$/.test(t) && t.length > 2 ? [...ngrams(t, 2), t] : [t]))
     .filter(t => t.length > 1)
-  if (!terms.length) return chunks.slice(0, k)
+  if (!terms.length) return chunks.map(() => 0)
 
+  return chunks.map((c) => {
+    const hay = `${c.title} ${c.text}`.toLowerCase()
+    let score = 0
+    for (const t of terms) {
+      if (c.title.toLowerCase().includes(t)) score += 3
+      if (hay.includes(t)) score += 1
+    }
+    return score
+  })
+}
+
+export function topChunks(chunks: GardenChunk[], query: string, k = 4): GardenChunk[] {
+  const scores = lexicalScores(chunks, query)
+  if (!scores.some(s => s > 0)) return chunks.slice(0, k)
   return chunks
-    .map((c) => {
-      const hay = `${c.title} ${c.text}`.toLowerCase()
-      let score = 0
-      for (const t of terms) {
-        if (c.title.toLowerCase().includes(t)) score += 3
-        if (hay.includes(t)) score += 1
-      }
-      return { c, score }
-    })
+    .map((c, i) => ({ c, score: scores[i]! }))
     .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, k)

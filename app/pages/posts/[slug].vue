@@ -29,12 +29,13 @@ const related = computed(() => {
 })
 
 useHead({ title: () => `${post.value?.title ?? ''} · ~/garden` })
+const siteUrl = useRuntimeConfig().public.siteUrl
 useSeoMeta({
   description: () => post.value?.description ?? '',
   ogTitle: () => post.value?.title ?? '',
   ogDescription: () => post.value?.description ?? '',
   ogType: 'article',
-  ogImage: 'https://blog.iqiqiqi.me/og.png',
+  ogImage: `${siteUrl}/og${route.path}.png`,
   twitterCard: 'summary_large_image',
 })
 
@@ -122,5 +123,7 @@ const toc = computed(() => post.value?.body?.toc?.links ?? [])
         <div class="mt-1 text-sm text-ink-soft group-hover:text-accent transition-colors">{{ surround[1].title }}</div>
       </NuxtLink>
     </nav>
+
+    <PostComments />
   </div>
 </template>

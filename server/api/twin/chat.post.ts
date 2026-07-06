@@ -1,4 +1,5 @@
-import { getGardenChunks, getPostFull, topChunks } from '../../utils/gardenIndex'
+import { getGardenChunks, getPostFull } from '../../utils/gardenIndex'
+import { hybridTopChunks } from '../../utils/embeddings'
 import { streamLLM, hasLLMKey, type ChatMsg } from '../../utils/llm'
 
 const PERSONA = `你是这座数字花园主人的数字孪生。规则：
@@ -31,7 +32,7 @@ export default defineEventHandler(async (event) => {
   const article = scope ? await getPostFull(event, scope) : null
 
   if (article && scope) {
-    const related = topChunks(chunks.filter(c => c.path !== scope), question, 2)
+    const related = await hybridTopChunks(chunks.filter(c => c.path !== scope), question, 2)
     hits = [
       { title: article.title, path: scope, kind: 'post', text: '' },
       ...related,
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
         .join('\n\n')}`
     }
   } else {
-    const top = topChunks(chunks, question, 4)
+    const top = await hybridTopChunks(chunks, question, 4)
     hits = top
     context = top
       .map((h, i) => `[${i + 1}] 《${h.title}》(${h.path}, ${'date' in h ? (h as { date: string }).date : ''})\n${h.text.slice(0, 900)}`)

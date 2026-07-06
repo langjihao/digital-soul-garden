@@ -3,6 +3,16 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2026-07-01',
   devtools: { enabled: false },
+  runtimeConfig: {
+    public: {
+      siteUrl: 'https://blog.iqiqiqi.me',
+      // giscus 评论：运行时以 NUXT_PUBLIC_GISCUS_* 环境变量注入，未配置则不渲染评论区
+      giscusRepo: '',
+      giscusRepoId: '',
+      giscusCategory: 'Announcements',
+      giscusCategoryId: '',
+    },
+  },
   modules: ['@nuxt/content'],
   css: ['~/assets/css/main.css'],
   vite: {
