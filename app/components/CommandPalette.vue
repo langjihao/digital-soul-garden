@@ -55,6 +55,7 @@ const actions = computed<Entry[]>(() => [
   { type: 'page', title: t.value.posts, path: '/posts', text: 'posts 文章' },
   { type: 'page', title: t.value.tweets, path: '/tweets', text: 'tweets 碎念 notes' },
   { type: 'page', title: t.value.media, path: '/media', text: 'media 媒体' },
+  { type: 'page', title: t.value.life, path: '/life', text: 'life 记录 书影音 运动 keep 豆瓣 微信读书 douban weread' },
   { type: 'page', title: '归档 Archive', path: '/archive', text: 'archive 归档 年份' },
   { type: 'page', title: t.value.about, path: '/about', text: 'about 关于' },
   { type: 'action', title: lang.value === 'zh' ? '与孪生对话' : 'Talk to the twin', text: 'twin chat ai 孪生 对话 聊天', run: showTwin },

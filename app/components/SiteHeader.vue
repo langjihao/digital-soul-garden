@@ -8,6 +8,7 @@ const nav = computed(() => [
   { to: '/posts', label: t.value.posts },
   { to: '/tweets', label: t.value.tweets },
   { to: '/media', label: t.value.media },
+  { to: '/life', label: t.value.life },
   { to: '/about', label: t.value.about },
 ])
 
