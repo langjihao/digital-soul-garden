@@ -55,21 +55,21 @@ const fmtDate = (iso: string) => iso.slice(0, 10)
     </div>
 
     <!-- 总览统计 -->
-    <div v-if="stats" v-reveal class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div class="rounded-xl border border-border bg-surface p-4">
+    <div v-if="stats" v-reveal class="mt-8 grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr))">
+      <div v-if="stats.books.done || stats.books.doing" class="rounded-xl border border-border bg-surface p-4">
         <p class="font-mono text-[11px] text-muted uppercase tracking-wide">books</p>
         <p class="mt-1 text-2xl font-bold text-ink">{{ stats.books.done }}<span class="ml-1 text-sm font-normal text-muted">{{ t.lifeBooksDone }}</span></p>
         <p class="font-mono text-[11px] text-accent mt-0.5">{{ stats.books.doing }} {{ t.lifeBooksDoing }}<template v-if="stats.readingHour"> · {{ stats.readingHour }}h</template></p>
       </div>
-      <div class="rounded-xl border border-border bg-surface p-4">
+      <div v-if="stats.movies.done" class="rounded-xl border border-border bg-surface p-4">
         <p class="font-mono text-[11px] text-muted uppercase tracking-wide">movies</p>
         <p class="mt-1 text-2xl font-bold text-ink">{{ stats.movies.done }}<span class="ml-1 text-sm font-normal text-muted">{{ t.lifeMoviesDone }}</span></p>
       </div>
-      <div class="rounded-xl border border-border bg-surface p-4">
+      <div v-if="stats.music.done" class="rounded-xl border border-border bg-surface p-4">
         <p class="font-mono text-[11px] text-muted uppercase tracking-wide">music</p>
         <p class="mt-1 text-2xl font-bold text-ink">{{ stats.music.done }}<span class="ml-1 text-sm font-normal text-muted">{{ t.lifeMusicDone }}</span></p>
       </div>
-      <div class="rounded-xl border border-border bg-surface p-4">
+      <div v-if="stats.workouts.count" class="rounded-xl border border-border bg-surface p-4">
         <p class="font-mono text-[11px] text-muted uppercase tracking-wide">workouts</p>
         <p class="mt-1 text-2xl font-bold text-ink">{{ stats.workouts.distanceKm }}<span class="ml-1 text-sm font-normal text-muted">km</span></p>
         <p class="font-mono text-[11px] text-accent mt-0.5">{{ stats.workouts.count }} {{ t.lifeWorkoutTimes }} · {{ stats.workouts.durationHour }}h</p>

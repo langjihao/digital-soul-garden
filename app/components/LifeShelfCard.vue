@@ -14,6 +14,12 @@ const statusLabel: Record<string, Record<string, string>> = {
 }
 const label = computed(() => statusLabel[props.item.kind]?.[props.item.status] ?? '')
 const sourceTag = computed(() => (props.item.source === 'weread' ? '微信读书' : props.item.source === 'douban' ? '豆瓣' : ''))
+// 豆瓣图床防盗链：走服务端代理（其余源直连）
+const coverSrc = computed(() => {
+  const c = props.item.cover
+  if (!c) return undefined
+  return /doubanio\.com/.test(c) ? `/api/life/cover?u=${encodeURIComponent(c)}` : c
+})
 // 无封面时的确定性占位色：标题哈希取色相
 const hue = computed(() => {
   let h = 0
@@ -30,7 +36,7 @@ const hue = computed(() => {
   >
     <div class="aspect-[2/3] overflow-hidden border-b border-border relative">
       <img
-        v-if="item.cover" :src="item.cover" :alt="item.title" referrerpolicy="no-referrer" loading="lazy"
+        v-if="coverSrc" :src="coverSrc" :alt="item.title" referrerpolicy="no-referrer" loading="lazy"
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
       >
       <div
