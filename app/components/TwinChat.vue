@@ -74,8 +74,12 @@ async function send(text?: string) {
         else if (ev === 'delta') { reply.content += data; scrollToEnd() }
       }
     }
-  } catch {
-    reply.content ||= lang.value === 'zh' ? '孪生暂时失联了，稍后再试。' : 'The twin is unreachable right now.'
+  } catch (e) {
+    if ((e as Error).message === '429') {
+      reply.content ||= lang.value === 'zh' ? '问得有点快，歇 10 秒再来。' : 'A bit too fast — give it 10 seconds.'
+    } else {
+      reply.content ||= lang.value === 'zh' ? '孪生暂时失联了，稍后再试。' : 'The twin is unreachable right now.'
+    }
   } finally {
     reply.streaming = false
     busy.value = false

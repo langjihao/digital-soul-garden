@@ -11,6 +11,7 @@ PROD_URL=http://127.0.0.1:3000
 cd "$(dirname "$0")"
 
 echo "==> [1/5] 构建"
+npm install --no-audit --no-fund >/dev/null
 rm -rf .output
 npm run build >/dev/null
 

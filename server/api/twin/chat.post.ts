@@ -1,6 +1,7 @@
 import { getGardenChunks, getPostFull } from '../../utils/gardenIndex'
 import { hybridTopChunks } from '../../utils/embeddings'
 import { streamLLM, hasLLMKey, type ChatMsg } from '../../utils/llm'
+import { checkTwinRate, clientIP } from '../../utils/rateLimit'
 
 const PERSONA = `你是这座数字花园主人的数字孪生。规则：
 - 只依据下面提供的「花园片段」回答；没有依据时明确说"花园里还没写过这个"
@@ -14,6 +15,11 @@ function sse(event: unknown, data: unknown) {
 }
 
 export default defineEventHandler(async (event) => {
+  const rate = checkTwinRate(clientIP(event))
+  if (rate !== 'ok') {
+    throw createError({ statusCode: 429, statusMessage: rate === 'daily' ? 'daily limit reached' : 'too fast' })
+  }
+
   const body = await readBody<{ messages: ChatMsg[]; scope?: string }>(event)
   const messages = (body?.messages ?? []).slice(-8)
   const question = messages.filter(m => m.role === 'user').at(-1)?.content ?? ''
