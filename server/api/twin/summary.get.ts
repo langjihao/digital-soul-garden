@@ -1,4 +1,5 @@
 import { getGardenChunks } from '../../utils/gardenIndex'
+import { completeLLM } from '../../utils/llm'
 
 const memo = new Map<string, { summary: string; mode: string }>()
 
@@ -13,39 +14,19 @@ export default defineEventHandler(async (event) => {
   const post = chunks.find(c => c.kind === 'post' && c.path === path)
   if (!post) throw createError({ statusCode: 404, statusMessage: 'post not found' })
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  let result: { summary: string; mode: string }
+  const live = await completeLLM({
+    system: '你是文章作者的数字孪生。用作者的第一人称口吻，把文章浓缩成 3 条要点（每条一行、以 "▸ " 开头、不超过 40 字）。只输出要点。',
+    messages: [{ role: 'user', content: post.text.slice(0, 3000) }],
+    maxTokens: 220,
+    temperature: 0.2,
+  })
 
-  if (apiKey) {
-    try {
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: process.env.TWIN_MODEL || 'claude-haiku-4-5-20251001',
-          max_tokens: 220,
-          temperature: 0.2,
-          system: '你是文章作者的数字孪生。用作者的第一人称口吻，把文章浓缩成 3 条要点（每条一行、以 "▸ " 开头、不超过 40 字）。只输出要点。',
-          messages: [{ role: 'user', content: post.text.slice(0, 3000) }],
-        }),
-      })
-      const data = await r.json()
-      const text = data?.content?.[0]?.text
-      if (typeof text !== 'string') throw new Error('bad response')
-      result = { summary: text.trim(), mode: 'live' }
-    } catch {
-      result = { summary: demoSummary(post.text), mode: 'demo' }
-    }
-  } else {
-    result = { summary: demoSummary(post.text), mode: 'demo' }
+  if (live) {
+    const result = { summary: live.text, mode: 'live' }
+    memo.set(path, result) // 只缓存真实推理结果；降级结果不缓存，限流恢复后自动升级
+    return result
   }
-
-  memo.set(path, result)
-  return result
+  return { summary: demoSummary(post.text), mode: 'demo' }
 })
 
 // demo mode: first sentence of description + first two section leads

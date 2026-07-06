@@ -28,6 +28,30 @@ function flatten(node: unknown): string {
   return ''
 }
 
+// 文章全文（供文章级问答注入完整上下文，chunk 版本截断在 2400 字）
+const postFullCache = new Map<string, { title: string; date: string; text: string; at: number }>()
+
+export async function getPostFull(event: H3Event, path: string) {
+  const hit = postFullCache.get(path)
+  if (hit && Date.now() - hit.at < TTL) return hit
+
+  const p = await queryCollection(event, 'posts')
+    .where('path', '=', path)
+    .where('draft', '=', false)
+    .first()
+  if (!p) return null
+
+  const bodyText = flatten((p.body as { value?: unknown })?.value ?? p.body).replace(/\s+/g, ' ')
+  const full = {
+    title: p.title ?? '',
+    date: String(p.date ?? ''),
+    text: `${p.title}。${p.description}。${bodyText}`,
+    at: Date.now(),
+  }
+  postFullCache.set(path, full)
+  return full
+}
+
 export async function getGardenChunks(event: H3Event): Promise<GardenChunk[]> {
   if (cache && Date.now() - cache.at < TTL) return cache.chunks
 

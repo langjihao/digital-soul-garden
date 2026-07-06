@@ -10,11 +10,23 @@ const input = ref('')
 const busy = ref(false)
 const listEl = ref<HTMLElement>()
 
-const suggestions = computed(() =>
-  lang.value === 'zh'
+// 文章页 → 提供「本文/全站」范围切换；其他页面恒为全站问答
+const route = useRoute()
+const articlePath = computed(() => (/^\/posts\/[\w-]+$/.test(route.path) ? route.path : null))
+const scopeArticle = ref(true)
+watch(articlePath, () => { scopeArticle.value = true })
+const scoped = computed(() => !!articlePath.value && scopeArticle.value)
+
+const suggestions = computed(() => {
+  if (scoped.value) {
+    return lang.value === 'zh'
+      ? ['这篇文章讲了什么？', '作者为什么这么设计？', '有哪些没展开说的细节？']
+      : ['What is this post about?', 'Why did the author design it this way?', 'Any details left unexplored?']
+  }
+  return lang.value === 'zh'
     ? ['混合检索是怎么做的？', '为什么把 Git 当 CMS？', '你最近在读什么？']
-    : ['How does hybrid search work?', 'Why Git as a CMS?', 'What are you reading lately?'],
-)
+    : ['How does hybrid search work?', 'Why Git as a CMS?', 'What are you reading lately?']
+})
 
 async function scrollToEnd() {
   await nextTick()
@@ -37,6 +49,7 @@ async function send(text?: string) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         messages: messages.value.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
+        scope: scoped.value ? articlePath.value : undefined,
       }),
     })
     if (!res.ok || !res.body) throw new Error(`${res.status}`)
@@ -98,10 +111,27 @@ async function send(text?: string) {
         </button>
       </header>
 
+      <!-- scope switch: only on post pages -->
+      <div v-if="articlePath" class="flex items-center gap-1.5 border-b border-border px-4 py-2">
+        <span class="font-mono text-[10px] text-muted select-none">--scope</span>
+        <button
+          class="rounded-full border px-2.5 py-0.5 font-mono text-[10px] transition-colors"
+          :class="scopeArticle ? 'border-accent text-accent bg-accent-soft' : 'border-border text-muted hover:text-ink'"
+          @click="scopeArticle = true"
+        >{{ lang === 'zh' ? '◉ 本文' : '◉ this post' }}</button>
+        <button
+          class="rounded-full border px-2.5 py-0.5 font-mono text-[10px] transition-colors"
+          :class="!scopeArticle ? 'border-accent text-accent bg-accent-soft' : 'border-border text-muted hover:text-ink'"
+          @click="scopeArticle = false"
+        >{{ lang === 'zh' ? '○ 全站' : '○ site-wide' }}</button>
+      </div>
+
       <div ref="listEl" class="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <div v-if="!messages.length" class="space-y-3">
           <p class="text-sm leading-relaxed text-ink-soft">
-            {{ lang === 'zh' ? '我是这座花园的数字孪生，读过这里的每一篇文章和碎念。' : 'I am the twin of this garden — I have read every post and note here.' }}
+            {{ scoped
+              ? (lang === 'zh' ? '我读过这篇文章的全文，可以针对它提问；切到「全站」则在整座花园里检索。' : 'I have read this post in full — ask me about it, or switch to site-wide to search the whole garden.')
+              : (lang === 'zh' ? '我是这座花园的数字孪生，读过这里的每一篇文章和碎念。' : 'I am the twin of this garden — I have read every post and note here.') }}
           </p>
           <button
             v-for="s in suggestions" :key="s"
